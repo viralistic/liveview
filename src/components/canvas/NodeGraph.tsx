@@ -7,6 +7,15 @@ import { NODE_SIZE } from '../../lib/layout';
 import { connectionGeometry, cubicPath, nodePorts, nodeRel } from './geometry';
 import s from './canvas.module.css';
 
+/** relative luminance of a hex color, to detect near-black brand icons */
+export function isDarkColor(hex: string): boolean {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return false;
+  const n = parseInt(m[1]!, 16);
+  const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+  return lum < 0.22;
+}
+
 export const FullGraph = memo(function FullGraph({ wf, failedNodeIds }: { wf: Workflow; failedNodeIds: ReadonlySet<string> }) {
   const conns = connectionGeometry(wf);
   const ports = nodePorts(wf);
@@ -27,7 +36,8 @@ export const FullGraph = memo(function FullGraph({ wf, failedNodeIds }: { wf: Wo
           <div
             key={n.id}
             className={s.node}
-            style={{ left: p.x, top: p.y, color: def.color }}
+            style={{ left: p.x, top: p.y, ['--node-color' as string]: def.color }}
+            data-darkicon={isDarkColor(def.color)}
             data-trigger={n.col === 0}
             data-disabled={!!n.disabled}
             data-failed={failedNodeIds.has(n.id)}
@@ -76,7 +86,7 @@ export const MiniGraph = memo(function MiniGraph({ wf, failedNodeIds }: { wf: Wo
         const def = nodeType(n.type);
         const Icon = iconByName(def.icon);
         return (
-          <div key={n.id} className={s.miniNode} style={{ left: p.x + MINI_OFF, top: p.y + MINI_OFF, color: def.color }} data-trigger={n.col === 0} data-disabled={!!n.disabled} data-failed={failedNodeIds.has(n.id)} title={n.name}>
+          <div key={n.id} className={s.miniNode} style={{ left: p.x + MINI_OFF, top: p.y + MINI_OFF, ['--node-color' as string]: def.color }} data-darkicon={isDarkColor(def.color)} data-trigger={n.col === 0} data-disabled={!!n.disabled} data-failed={failedNodeIds.has(n.id)} title={n.name}>
             <Icon strokeWidth={2} />
           </div>
         );

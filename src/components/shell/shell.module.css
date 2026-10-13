@@ -116,7 +116,7 @@
 .divider { width: 1px; height: 20px; background: var(--border-strong); margin: 0 4px; }
 
 /* ================= Toast ================= */
-.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--primary); color: var(--primary-fg); padding: 9px 14px; border-radius: var(--radius-full); font-size: var(--fs-sm); font-weight: var(--fw-medium); box-shadow: var(--shadow-lg); z-index: 3000; animation: pop-in var(--dur) var(--ease-out); display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.toast { position: fixed; left: calc(50% + var(--sidebar-w) / 2); top: calc(var(--topbar-h) + 14px); transform: translateX(-50%); background: var(--primary); color: var(--primary-fg); padding: 9px 14px; border-radius: var(--radius-full); font-size: var(--fs-sm); font-weight: var(--fw-medium); box-shadow: var(--shadow-lg); z-index: 3000; animation: pop-in var(--dur) var(--ease-out); display: flex; align-items: center; gap: 8px; white-space: nowrap; }
 .toast svg { width: 14px; height: 14px; color: var(--green-500); }
 
 /* ================= Command palette ================= */

@@ -161,7 +161,7 @@ export function buildLayout(companies: Company[], workflows: Workflow[]): WorldL
         sectionSources.push(s);
         sources.push(s);
       });
-      sections.push({ companyId: company.id, x, y, w: colW, h: rowH, cards: sectionCards, sources: sectionSources });
+      sections.push({ companyId: company.id, x, y, w: colW, h: size.h, cards: sectionCards, sources: sectionSources });
     }
     y += rowH + SECTION_GAP;
   }
