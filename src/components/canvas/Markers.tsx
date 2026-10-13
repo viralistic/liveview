@@ -29,7 +29,7 @@ export function Markers({ layout, workflows, onOpenPanel }: { layout: WorldLayou
   return (
     <>
       {items.map(({ issue, wf, x, y }) => (
-        <div key={issue.id} className={s.anchor} style={{ left: x, top: y, zIndex: open === issue.id ? 2 : 1 }} data-ui onPointerEnter={() => setOpen(issue.id)} onPointerLeave={() => setOpen((v) => (v === issue.id ? null : v))}>
+        <div key={issue.id} className={s.anchor} style={{ left: x, top: y, zIndex: open === issue.id ? 2 : 1 }} data-ui data-issue={issue.id} onPointerEnter={() => setOpen(issue.id)} onPointerLeave={() => setOpen((v) => (v === issue.id ? null : v))}>
           <div className={s.markerWrap}>
             <span className={s.marker}>
               <SeverityIcon severity={issue.severity} size={12} filled />

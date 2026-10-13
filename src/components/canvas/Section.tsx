@@ -3,6 +3,7 @@ import { Share2, UsersRound } from 'lucide-react';
 import type { Company, User, Workflow } from '../../data/types';
 import type { SectionLayout } from '../../lib/layout';
 import { CARD_W } from '../../lib/layout';
+import { sourceRoute } from './geometry';
 import { SEVERITY_HEX, companyHealth, worstSeverity } from '../../lib/health';
 import { openShare } from '../../stores/session';
 import { AvatarGroup } from '../ui/Avatar';
@@ -25,15 +26,18 @@ export interface SectionProps {
   selected: boolean;
   selectedWf: string | null;
   heat: boolean;
+  showSources: boolean;
 }
 
-const HEAT_R = CARD_W * 0.6;
+const HEAT_RX = CARD_W * 0.5;
+const HEAT_RY = CARD_W * 0.27;
+const HEAT_OPACITY = { critical: 0.42, inefficient: 0.3, minor: 0.18 } as const;
 
-export const Section = memo(function Section({ section, company, workflows, visibleIds, members, ownerById, canManage, askName, tier, selected, selectedWf, heat }: SectionProps) {
+export const Section = memo(function Section({ section, company, workflows, visibleIds, members, ownerById, canManage, askName, tier, selected, selectedWf, heat, showSources }: SectionProps) {
   const visibleCount = workflows.filter((w) => visibleIds.has(w.id)).length;
   const health = companyHealth(company.id);
   return (
-    <div className={s.section} data-section={company.id} data-selected={selected} style={{ left: section.x, top: section.y, width: section.w, height: section.h }}>
+    <div className={s.section} data-section={company.id} data-selected={selected} data-tier={tier} style={{ left: section.x, top: section.y, width: section.w, height: section.h }}>
       <div className={[s.sectionLabel, s.csBL].join(' ')} data-section-label={company.id}>
         <CompanyMark company={company} size={20} />
         <span className={s.sectionName}>{company.shortName}</span>
@@ -62,10 +66,37 @@ export const Section = memo(function Section({ section, company, workflows, visi
             key={`heat-${wf.id}`}
             className={s.heat}
             data-on={heat}
-            style={{ ['--heat' as string]: SEVERITY_HEX[worst], left: card.x + card.w / 2 - HEAT_R - section.x, top: card.y + card.h / 2 - HEAT_R - section.y, width: HEAT_R * 2, height: HEAT_R * 2 }}
+            style={{ ['--heat' as string]: SEVERITY_HEX[worst], ['--heat-o' as string]: HEAT_OPACITY[worst], left: card.x + card.w / 2 - HEAT_RX - section.x, top: card.y + card.h / 2 - HEAT_RY - section.y, width: HEAT_RX * 2, height: HEAT_RY * 2 }}
           />
         );
       })}
+      {showSources && (
+        <svg className={s.sectionSvg} aria-hidden="true">
+          {section.sources.flatMap((src) =>
+            src.workflowIds.map((id) => {
+              const wf = workflows.find((w) => w.id === id);
+              const card = section.cards.find((c) => c.workflowId === id);
+              if (!wf || !card || !visibleIds.has(id)) return null;
+              const route = sourceRoute({ ...src, x: src.x - section.x, y: src.y - section.y }, { ...card, x: card.x - section.x, y: card.y - section.y }, wf);
+              const eid = `s-${src.id.replace(':', '-')}-${id}`;
+              const dur = Math.min(7, Math.max(2.4, route.len / 260));
+              return (
+                <g key={eid}>
+                  <path id={eid} className={s.srcEdge} d={route.d} />
+                  {wf.active && (
+                    <g>
+                      <animateMotion dur={`${dur.toFixed(2)}s`} repeatCount="indefinite" begin={`-${(dur * 0.37).toFixed(2)}s`}>
+                        <mpath href={`#${eid}`} />
+                      </animateMotion>
+                      <circle className={s.dot} r={2.6} fill="rgba(0,0,0,0.5)" />
+                    </g>
+                  )}
+                </g>
+              );
+            }),
+          )}
+        </svg>
+      )}
       {section.cards.map((card) => {
         const wf = workflows.find((w) => w.id === card.workflowId);
         if (!wf) return null;

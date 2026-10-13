@@ -2,41 +2,41 @@
 .scopeHint { font-size: var(--fs-xs); color: var(--text-muted); }
 .invite { display: flex; gap: 8px; align-items: stretch; margin-bottom: 18px; }
 .inviteBox { flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-strong); border-radius: var(--radius); padding: 0 6px 0 12px; height: 36px; background: var(--surface); box-shadow: var(--shadow-xs); transition: border-color var(--dur-fast), box-shadow var(--dur-fast); }
-.inviteBox:focus-within { border-color: var(--text); box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
+.inviteBox:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .inviteBox input { flex: 1; border: 0; outline: 0; background: transparent; font-size: var(--fs-sm); min-width: 0; }
 .inviteBox input::placeholder { color: var(--text-subtle); }
 .roleSelect { position: relative; display: inline-flex; align-items: center; }
 .roleSelect select { appearance: none; border: 0; background: transparent; font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--text-secondary); padding: 4px 22px 4px 8px; border-radius: 6px; cursor: pointer; }
-.roleSelect select:hover { background: var(--neutral-100); }
+.roleSelect select:hover { background: var(--surface-3); }
 .roleSelect svg { position: absolute; right: 6px; width: 13px; height: 13px; pointer-events: none; color: var(--text-subtle); }
 .roleSelect select:disabled { color: var(--text-subtle); cursor: default; }
 .roleSelect select:disabled:hover { background: transparent; }
 .sectionTitle { font-size: var(--fs-2xs); font-weight: var(--fw-semibold); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-subtle); margin: 0 0 8px; display: flex; align-items: center; justify-content: space-between; }
 .list { display: flex; flex-direction: column; margin: 0 -8px; }
 .row { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; transition: background var(--dur-fast); }
-.row:hover { background: var(--neutral-50); }
+.row:hover { background: var(--surface-2); }
 .who { flex: 1; min-width: 0; }
 .name { font-size: var(--fs-sm); font-weight: var(--fw-medium); letter-spacing: var(--tracking-tight); display: flex; align-items: center; gap: 6px; }
 .email { font-size: var(--fs-xs); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.via { font-size: 10.5px; color: var(--text-subtle); background: var(--neutral-100); border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; height: 16px; display: inline-flex; align-items: center; gap: 4px; }
+.via { font-size: 10.5px; color: var(--text-subtle); background: var(--surface-3); border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; height: 16px; display: inline-flex; align-items: center; gap: 4px; }
 .via svg { width: 10px; height: 10px; }
 .viaLink { color: var(--text-muted); text-decoration: underline; text-decoration-color: var(--border-strong); cursor: pointer; }
 .viaLink:hover { color: var(--text); }
-.link { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--neutral-50); margin-top: 16px; }
+.link { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-2); margin-top: 16px; }
 .linkIcon { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); flex: none; }
 .linkIcon svg { width: 16px; height: 16px; }
 .linkMeta { flex: 1; min-width: 0; }
 .linkTitle { font-size: var(--fs-sm); font-weight: var(--fw-medium); display: flex; align-items: center; gap: 8px; }
 .linkSub { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 1px; }
-.toggle { width: 32px; height: 18px; border-radius: 9px; background: var(--neutral-300); position: relative; transition: background var(--dur-fast); flex: none; }
+.toggle { width: 32px; height: 18px; border-radius: 9px; background: var(--track-strong); position: relative; transition: background var(--dur-fast); flex: none; }
 .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: transform var(--dur-fast) var(--ease-out); }
-.toggle[aria-checked='true'] { background: var(--primary); }
+.toggle[aria-checked='true'] { background: var(--accent); }
 .toggle[aria-checked='true']::after { transform: translateX(14px); }
 .footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-subtle); font-size: var(--fs-xs); color: var(--text-muted); }
 .hier { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 16px; }
 .hierItem { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; text-align: left; transition: all var(--dur-fast); background: var(--surface); position: relative; }
 .hierItem:hover { border-color: var(--border-strong); }
-.hierItem[aria-pressed='true'] { border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
+.hierItem[aria-pressed='true'] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); background: var(--accent-soft); }
 .hierItem[disabled] { opacity: 0.45; cursor: not-allowed; }
 .hierKind { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-subtle); font-weight: var(--fw-semibold); display: flex; align-items: center; gap: 4px; }
 .hierKind svg { width: 11px; height: 11px; }

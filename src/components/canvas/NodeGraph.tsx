@@ -54,7 +54,7 @@ export const FullGraph = memo(function FullGraph({ wf, failedNodeIds }: { wf: Wo
   );
 });
 
-const MINI = 72;
+const MINI = 80;
 const MINI_OFF = (NODE_SIZE - MINI) / 2;
 
 export const MiniGraph = memo(function MiniGraph({ wf, failedNodeIds }: { wf: Workflow; failedNodeIds: ReadonlySet<string> }) {

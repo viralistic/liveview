@@ -46,6 +46,7 @@ function rewriteLink(href) {
 function rewriteHtml(html, depth, isRoot) {
   html = html.replace(/(href|src|component-url|renderer-url)="\/(_astro|app)\//g, '$1="./$2/');
   html = html.replace(/href="\/favicon\.svg"/g, 'href="./favicon.svg"');
+  html = html.replace(/src="\/avatars\//g, 'src="./avatars/');
   html = html.replace(/href="(\/[^"]*)"/g, (_, h) => `href="${rewriteLink(h)}"`);
   const base = `<base href="${depth ? '../'.repeat(depth) : './'}">`;
   if (isRoot) {
@@ -81,6 +82,7 @@ function rewriteJs(js) {
   // any remaining absolute asset refs
   js = js.replace(/(["'`])\/(_astro|app)\//g, '$1./$2/');
   js = js.replace(/(["'`])\/favicon\.svg/g, '$1./favicon.svg');
+  js = js.replace(/(["'`])\/avatars\//g, '$1./avatars/');
   return js;
 }
 
@@ -112,7 +114,7 @@ const leftovers = [];
 for (const f of await walk(OUT)) {
   if (!/\.(html|js|css)$/.test(f)) continue;
   const txt = await fs.readFile(f, 'utf8');
-  const bad = txt.match(/(["'`(])\/(?:_astro|app|workflows|companies|users|credentials|favicon)\b/g);
+  const bad = txt.match(/(["'`(])\/(?:_astro|app|workflows|companies|users|credentials|favicon|avatars)\b/g);
   if (bad) leftovers.push(`${path.relative(OUT, f)}: ${[...new Set(bad)].join(' ')}`);
 }
 console.log(`wrote ${count} files to ${OUT}/ (${routes.size} pages)`);

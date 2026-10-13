@@ -4,20 +4,49 @@ import { hoursAgo, minutesAgo, daysAgo } from '../lib/format';
 /**
  * Fake people. Every cursor is a different pink, on purpose:
  * hot pink, rose, magenta, raspberry, salmon, bubblegum, orchid, cerise.
+ * Portraits are generated line-art (scripts/gen-avatars.mjs).
  */
 export const USERS: User[] = [
   {
-    id: 'u-noor',
-    name: 'Noor Bakker',
-    email: 'noor@viralistic.nl',
-    title: 'Founder & Automation Lead',
+    id: 'u-marrallisa',
+    name: 'Marrallisa',
+    email: 'info@viralistic.nl',
+    title: 'Founder',
     companyId: 'viralistic',
     color: '#ff2d75',
     avatarColors: ['#ff2d75', '#0a0a0a', '#ffd6e4', '#ff8fb3', '#ffffff'],
+    photo: '/avatars/u-marrallisa.svg',
     online: true,
     lastActiveAt: minutesAgo(0),
     isYou: true,
     presence: { viewing: 'volkswagen', device: 'mac' },
+  },
+  {
+    id: 'u-mirza',
+    name: 'Mirza Iqbal',
+    email: 'mirza@viralistic.nl',
+    title: 'Lead Developer',
+    companyId: 'viralistic',
+    color: '#f43f85',
+    avatarColors: ['#f43f85', '#111111', '#ffe4ef', '#ffffff', '#be185d'],
+    photo: '/avatars/u-mirza.svg',
+    online: true,
+    lastActiveAt: minutesAgo(1),
+    presence: { viewing: 'tr-order-processing', device: 'mac' },
+  },
+  {
+    id: 'u-jan',
+    name: 'Jan Oberhausen',
+    email: 'jan.oberhausen@volkswagen.nl',
+    title: 'Innovation Manager',
+    companyId: 'volkswagen',
+    color: '#ff4d8d',
+    avatarColors: ['#ff4d8d', '#0a0a0a', '#ffe1ea', '#ffffff', '#ff8fb3'],
+    photo: '/avatars/u-jan.svg',
+    online: true,
+    lastActiveAt: minutesAgo(2),
+    presence: { viewing: 'vw-test-drive-booking', device: 'windows' },
+    video: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
   },
   {
     id: 'u-daan',
@@ -27,6 +56,7 @@ export const USERS: User[] = [
     companyId: 'viralistic',
     color: '#f472b6',
     avatarColors: ['#f472b6', '#1f1f1f', '#fbcfe8', '#ffffff', '#be185d'],
+    photo: '/avatars/u-daan.svg',
     online: true,
     lastActiveAt: minutesAgo(1),
     presence: { viewing: 'vir-lead-enrich', device: 'mac' },
@@ -39,6 +69,7 @@ export const USERS: User[] = [
     companyId: 'volkswagen',
     color: '#e11d74',
     avatarColors: ['#e11d74', '#ffe4ef', '#0a0a0a', '#ff9ccd', '#ffffff'],
+    photo: '/avatars/u-lotte.svg',
     online: true,
     lastActiveAt: minutesAgo(3),
     presence: { viewing: 'vw-dealer-lead-routing', device: 'windows' },
@@ -51,6 +82,7 @@ export const USERS: User[] = [
     companyId: 'transmissies',
     color: '#db2777',
     avatarColors: ['#db2777', '#111111', '#fce7f3', '#ffffff', '#f9a8d4'],
+    photo: '/avatars/u-milan.svg',
     online: true,
     lastActiveAt: minutesAgo(0),
     presence: { viewing: 'tr-stock-sync', device: 'mac' },
@@ -63,6 +95,7 @@ export const USERS: User[] = [
     companyId: 'viralistic',
     color: '#fb7185',
     avatarColors: ['#fb7185', '#0a0a0a', '#ffe4e6', '#ffffff', '#e11d48'],
+    photo: '/avatars/u-sara.svg',
     online: false,
     lastActiveAt: hoursAgo(2),
   },
@@ -74,6 +107,7 @@ export const USERS: User[] = [
     companyId: 'viralistic',
     color: '#f9a8d4',
     avatarColors: ['#f9a8d4', '#1a1a1a', '#ffffff', '#ec4899', '#fdf2f8'],
+    photo: '/avatars/u-finn.svg',
     online: false,
     lastActiveAt: daysAgo(1),
   },
@@ -85,6 +119,7 @@ export const USERS: User[] = [
     companyId: 'viralistic',
     color: '#e879f9',
     avatarColors: ['#e879f9', '#0a0a0a', '#fae8ff', '#ffffff', '#a21caf'],
+    photo: '/avatars/u-eva.svg',
     online: false,
     lastActiveAt: hoursAgo(26),
   },
@@ -96,12 +131,13 @@ export const USERS: User[] = [
     companyId: 'hoasted',
     color: '#be185d',
     avatarColors: ['#be185d', '#fdf2f8', '#0a0a0a', '#ffffff', '#f472b6'],
+    photo: '/avatars/u-tom.svg',
     online: false,
     lastActiveAt: hoursAgo(5),
   },
 ];
 
-const g = (id: string, userId: string, scope: Grant['scope'], role: Grant['role'], grantedAt: string, grantedById = 'u-noor'): Grant => ({
+const g = (id: string, userId: string, scope: Grant['scope'], role: Grant['role'], grantedAt: string, grantedById = 'u-marrallisa'): Grant => ({
   id,
   userId,
   scope,
@@ -112,7 +148,7 @@ const g = (id: string, userId: string, scope: Grant['scope'], role: Grant['role'
 
 /** Access is hierarchical: org → company → workflow. The highest matching grant wins. */
 export const INITIAL_GRANTS: Grant[] = [
-  g('g1', 'u-noor', { kind: 'org' }, 'admin', daysAgo(600), 'u-noor'),
+  g('g1', 'u-marrallisa', { kind: 'org' }, 'admin', daysAgo(600), 'u-marrallisa'),
   g('g2', 'u-daan', { kind: 'org' }, 'editor', daysAgo(400)),
   g('g3', 'u-daan', { kind: 'company', companyId: 'hoasted' }, 'admin', daysAgo(60)),
   g('g4', 'u-lotte', { kind: 'company', companyId: 'volkswagen' }, 'commenter', daysAgo(190)),
@@ -125,6 +161,9 @@ export const INITIAL_GRANTS: Grant[] = [
   g('g11', 'u-eva', { kind: 'company', companyId: 'viralistic' }, 'viewer', daysAgo(300)),
   g('g12', 'u-eva', { kind: 'workflow', workflowId: 'ho-invoice-dunning' }, 'commenter', daysAgo(20), 'u-daan'),
   g('g13', 'u-tom', { kind: 'company', companyId: 'hoasted' }, 'editor', daysAgo(58), 'u-daan'),
+  g('g14', 'u-mirza', { kind: 'org' }, 'editor', daysAgo(350)),
+  g('g15', 'u-mirza', { kind: 'company', companyId: 'transmissies' }, 'admin', daysAgo(100)),
+  g('g16', 'u-jan', { kind: 'company', companyId: 'volkswagen' }, 'commenter', daysAgo(120), 'u-sara'),
 ];
 
 export const userById = (id: string): User => USERS.find((u) => u.id === id)!;

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronsUpDown, KeyRound, LayoutDashboard, PanelLeftClose, PanelLeftOpen, Pin, Plus, RotateCcw, Users, Waypoints } from 'lucide-react';
 import { COMPANIES, USERS, ROLE_LABEL } from '../../data';
 import { $pinned, $sidebarCollapsed, openShare, resetDemo, switchUser, togglePin, useStore, useSession } from '../../stores/session';
-import { highestRole, isOrgAdmin, roleForCompany, visibleWorkflows } from '../../lib/access';
+import { companyMembers, highestRole, isOrgAdmin, roleForCompany, visibleWorkflows } from '../../lib/access';
 import { companyHealth, healthTone } from '../../lib/health';
 import { N8nMark, N8nWordmark } from '../brand/N8nLogo';
 import { Avatar } from '../ui/Avatar';
@@ -51,23 +51,32 @@ export function Sidebar({ active, activeCompanyId }: { active: NavKey; activeCom
     { key: 'credentials' as NavKey, href: '/credentials', label: 'Credentials', icon: <KeyRound />, right: null },
   ];
 
-  const renderCompany = (c: (typeof COMPANIES)[number]) => {
+  const renderProject = (c: (typeof COMPANIES)[number]) => {
     const health = companyHealth(c.id);
     const isPinned = pinned.includes(c.id);
     const partial = !roleForCompany(user.id, c.id, grants);
+    const members = companyMembers(c.id, grants);
     return (
-      <a key={c.id} href={`/companies/${c.slug}`} className={s.company} aria-current={active === 'company' && activeCompanyId === c.id ? 'page' : undefined} title={collapsed ? c.name : undefined}>
+      <a key={c.id} href={`/companies/${c.slug}`} className={s.company} aria-current={active === 'company' && activeCompanyId === c.id ? 'page' : undefined} title={collapsed ? c.name : `${c.name} · ${members.length} people`}>
         <span className={s.companyMark}>
           {c.initials}
           <i style={{ background: c.color }} />
         </span>
-        <span className={s.companyName}>{c.shortName}{partial ? <span style={{ color: 'var(--sidebar-fg-subtle)', fontWeight: 450 }}> · partial</span> : null}</span>
+        <span className={s.companyName}>
+          {c.shortName}
+          {partial ? <span style={{ color: 'var(--sidebar-fg-subtle)', fontWeight: 450 }}> · partial</span> : null}
+        </span>
+        <span className={s.members} aria-label={`${members.length} people`}>
+          {members.slice(0, 3).map((m) => (
+            <Avatar key={m.user.id} user={m.user} size={16} />
+          ))}
+        </span>
         <span className={s.companyMeta}>
           <button
             type="button"
             className={s.pinBtn}
             data-pinned={isPinned}
-            aria-label={isPinned ? 'Unpin' : 'Pin to top'}
+            aria-label={isPinned ? 'Unpin project' : 'Pin project to top'}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -111,27 +120,20 @@ export function Sidebar({ active, activeCompanyId }: { active: NavKey; activeCom
         ))}
 
         <div className={s.stripe} />
-        {pinnedCompanies.length > 0 && (
-          <>
-            <div className={s.sectionLabel}>
-              <span>Pinned</span>
-            </div>
-            {pinnedCompanies.map(renderCompany)}
-          </>
-        )}
         <div className={s.sectionLabel}>
-          <span>Companies</span>
+          <span>Projects</span>
           {admin && (
-            <button type="button" aria-label="Onboard company" onClick={() => openShare({ kind: 'org' })} title="Onboard a company">
+            <button type="button" aria-label="Onboard a project" onClick={() => openShare({ kind: 'org' })} title="Onboard a project">
               <Plus />
             </button>
           )}
         </div>
-        {otherCompanies.map(renderCompany)}
-        {otherCompanies.length === 0 && pinnedCompanies.length > 0 && !collapsed && <div className={s.lockedHint}>All your companies are pinned.</div>}
+        {pinnedCompanies.map(renderProject)}
+        {pinnedCompanies.length > 0 && otherCompanies.length > 0 && <div className={s.projectDivider} aria-hidden="true" />}
+        {otherCompanies.map(renderProject)}
         {companies.length < COMPANIES.length && !collapsed && (
           <div className={s.lockedHint}>
-            {COMPANIES.length - companies.length} more {COMPANIES.length - companies.length === 1 ? 'company is' : 'companies are'} hidden for {user.isYou ? 'you' : user.name.split(' ')[0]}.
+            {COMPANIES.length - companies.length} more {COMPANIES.length - companies.length === 1 ? 'project is' : 'projects are'} hidden for {user.isYou ? 'you' : user.name.split(' ')[0]}.
           </div>
         )}
       </nav>

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Bell, Building2, ChevronRight, Search, Share2, Waypoints, Workflow, Users as UsersIcon, KeyRound, LayoutDashboard } from 'lucide-react';
+import { Bell, Building2, ChevronRight, Monitor, Moon, Search, Share2, Sun, Waypoints, Workflow, Users as UsersIcon, KeyRound, LayoutDashboard } from 'lucide-react';
 import type { Scope } from '../../data/types';
 import { COMPANIES, USERS, WORKFLOWS } from '../../data';
-import { openShare, useSession } from '../../stores/session';
+import { openShare, useSession, $theme, applyTheme, cycleTheme, useStore } from '../../stores/session';
 import { canSeeCompany, canSeeWorkflow, roleForScope, canManage } from '../../lib/access';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -24,6 +24,8 @@ export function Topbar({ crumbs, shareScope, context }: { crumbs: Crumb[]; share
   const { user } = useSession();
   const { grants } = useSession();
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const theme = useStore($theme);
+  useEffect(() => applyTheme(theme), [theme]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -89,6 +91,11 @@ export function Topbar({ crumbs, shareScope, context }: { crumbs: Crumb[]; share
           <Share2 />
           {shareLabel}
         </Button>
+        <Tooltip label={theme === 'system' ? 'Theme: system' : theme === 'dark' ? 'Theme: dark' : 'Theme: light'} side="bottom">
+          <button type="button" className={s.iconBtn} aria-label="Switch theme" onClick={cycleTheme}>
+            {theme === 'dark' ? <Moon /> : theme === 'light' ? <Sun /> : <Monitor />}
+          </button>
+        </Tooltip>
         <button type="button" className={s.iconBtn} aria-label="Notifications">
           <Bell />
           <span className={s.bellDot} />

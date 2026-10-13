@@ -29,6 +29,7 @@ export function PageHeader({ eyebrow, title, lede, actions }: { eyebrow?: ReactN
 export function ViewSwitcher({ value }: { value: 'list' | 'graph' | 'canvas' }) {
   return (
     <Segmented
+      pill
       value={value}
       items={[
         { id: 'list', label: 'List', icon: <List />, href: '/workflows' },
@@ -127,6 +128,9 @@ export function CompanyCard({ company }: { company: Company }) {
   const isPinned = pinned.includes(company.id);
   return (
     <div className={s.companyCard}>
+      <a href={`/companies/${company.slug}`} className={s.cardArrow} aria-label={`Open ${company.shortName}`}>
+        <ArrowUpRight />
+      </a>
       <div className={s.companyTop}>
         <span className={s.heroMark} style={{ background: company.color, width: 40, height: 40, borderRadius: 11, fontSize: 13 }}>
           {company.initials}
@@ -143,6 +147,7 @@ export function CompanyCard({ company }: { company: Company }) {
           <div className={s.companyInd}>{company.industry} · {company.city}</div>
         </div>
         <HealthRing score={health} size={40} />
+        <span style={{ width: 18 }} />
       </div>
       <div className={s.companyStats}>
         <div className={s.companyStat}>

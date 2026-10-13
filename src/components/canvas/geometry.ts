@@ -155,14 +155,25 @@ export interface Route {
 export function interWorkflowRoute(callerCard: Rect, caller: Workflow, calleeCard: Rect, callee: Workflow): Route {
   const a = cardExit(callerCard, caller, callee.id);
   const b = cardEntry(calleeCard, callee);
+  // if other nodes sit to the right of the Execute Workflow node, leave through the row gap below the card
+  const exec = caller.nodes.find((n) => n.type === 'executeWorkflow') ?? caller.nodes[caller.nodes.length - 1]!;
+  const blocked = caller.nodes.some((n) => n.row === exec.row && n.col > exec.col);
   const sameRow = Math.abs(callerCard.y - calleeCard.y) < 1;
-  if (sameRow && b.x > a.x + 80) {
+  if (!blocked && sameRow && b.x > a.x + 80) {
     return { d: cubicPath(a, b, 120, 0.5), len: cubicLength(a, b, 120, 0.5), a, b };
   }
   const x1 = callerCard.x + callerCard.w + 60;
   const x2 = calleeCard.x - 60;
   const yc = calleeCard.y - 60;
-  const pts: Pt[] = Math.abs(x1 - x2) < 1 ? [a, { x: x1, y: a.y }, { x: x1, y: b.y }, b] : [a, { x: x1, y: a.y }, { x: x1, y: yc }, { x: x2, y: yc }, { x: x2, y: b.y }, b];
+  const pts: Pt[] = [a];
+  if (blocked) {
+    const laneY = callerCard.y + callerCard.h + 60;
+    pts.push({ x: a.x + 36, y: a.y }, { x: a.x + 36, y: laneY }, { x: x1, y: laneY });
+  } else {
+    pts.push({ x: x1, y: a.y });
+  }
+  if (Math.abs(x1 - x2) < 1) pts.push({ x: x1, y: b.y }, b);
+  else pts.push({ x: x1, y: yc }, { x: x2, y: yc }, { x: x2, y: b.y }, b);
   return { d: roundedPolyline(pts, 44), len: polylineLength(pts), a, b };
 }
 

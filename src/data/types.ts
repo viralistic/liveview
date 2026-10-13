@@ -126,6 +126,10 @@ export interface User {
   companyId: string; // employer
   color: string; // a pink, used for cursor + presence
   avatarColors: string[];
+  /** illustrated portrait, see scripts/gen-avatars.mjs */
+  photo?: string;
+  /** easter egg: clicking the avatar opens this video */
+  video?: string;
   online: boolean;
   lastActiveAt: string;
   isYou?: boolean;

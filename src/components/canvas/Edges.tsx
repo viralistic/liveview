@@ -1,10 +1,10 @@
-/** SVG world layer: source edges (dashed) and Execute Workflow edges with travelling dots. */
+/** SVG world layer: Execute Workflow edges with travelling dots (source edges live inside each section, beneath its cards). */
 import { useMemo } from 'react';
 import { useStore } from '@nanostores/react';
 import type { Workflow } from '../../data/types';
 import { companyById } from '../../data/companies';
 import type { WorldLayout } from '../../lib/layout';
-import { interWorkflowRoute, sourceRoute } from './geometry';
+import { interWorkflowRoute } from './geometry';
 import { $hoverWf } from './viewport';
 import type { Selection } from './types';
 import s from './canvas.module.css';
@@ -18,15 +18,8 @@ interface InterEdge {
   dots: number;
   color: string;
 }
-interface SrcEdge {
-  id: string;
-  wf: string;
-  d: string;
-  dur: number;
-  active: boolean;
-}
 
-export function Edges({ layout, workflowById, visibleIds, selection, showConnections, showSources }: { layout: WorldLayout; workflowById: ReadonlyMap<string, Workflow>; visibleIds: ReadonlySet<string>; selection: Selection; showConnections: boolean; showSources: boolean }) {
+export function Edges({ layout, workflowById, visibleIds, selection, showConnections }: { layout: WorldLayout; workflowById: ReadonlyMap<string, Workflow>; visibleIds: ReadonlySet<string>; selection: Selection; showConnections: boolean }) {
   const hover = useStore($hoverWf);
   const hiId = hover ?? (selection?.kind === 'workflow' ? selection.id : null);
 
@@ -56,36 +49,8 @@ export function Edges({ layout, workflowById, visibleIds, selection, showConnect
     return out;
   }, [layout, workflowById, visibleIds]);
 
-  const src = useMemo<SrcEdge[]>(() => {
-    const out: SrcEdge[] = [];
-    for (const source of layout.sources) {
-      for (const id of source.workflowIds) {
-        const wf = workflowById.get(id);
-        const card = layout.cards[id];
-        if (!wf || !card || !visibleIds.has(id)) continue;
-        const route = sourceRoute(source, card, wf);
-        out.push({ id: `s-${source.id.replace(':', '-')}-${id}`, wf: id, d: route.d, dur: Math.min(7, Math.max(2.4, route.len / 260)), active: wf.active });
-      }
-    }
-    return out;
-  }, [layout, workflowById, visibleIds]);
-
   return (
     <>
-      {showSources &&
-        src.map((e) => (
-          <g key={e.id}>
-            <path id={e.id} className={s.srcEdge} d={e.d} />
-            {e.active && (
-              <g>
-                <animateMotion dur={`${e.dur}s`} repeatCount="indefinite" begin={`-${(e.dur * 0.37).toFixed(2)}s`}>
-                  <mpath href={`#${e.id}`} />
-                </animateMotion>
-                <circle className={s.dot} r={2.6} fill="rgba(0,0,0,0.5)" />
-              </g>
-            )}
-          </g>
-        ))}
       {showConnections &&
         inter.map((e) => {
           const hi = hiId === e.from || hiId === e.to;

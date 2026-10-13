@@ -12,7 +12,6 @@ import { $heatmap, $visibleCompanies, $visibleWorkflows, toast } from '../../sto
 import { SEVERITY_HEX } from '../../lib/health';
 import type { SourceKind } from '../../lib/layout';
 import { WorkflowPanel } from '../pages/WorkflowPanel';
-import { Tooltip } from '../ui/Tooltip';
 import { buildGraph, matchesQuery, nodeColor, type GraphLink, type GraphNode } from './model';
 import { forceCluster, type ClusterForce } from './forces';
 import { Controls, DEFAULT_SETTINGS, type Settings } from './Controls';
@@ -36,7 +35,10 @@ interface Box {
   y1: number;
   x2: number;
   y2: number;
+  id?: string;
 }
+type Placement = 'b' | 't' | 'r' | 'l';
+const PLACEMENTS: Placement[] = ['b', 't', 'r', 'l'];
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -44,6 +46,13 @@ const readFocus = () => (typeof window === 'undefined' ? null : new URLSearchPar
 const intersects = (a: Box, b: Box) => a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
 /** rough text width for 12px Geist medium, used for label occlusion */
 const estWidth = (n: GraphNode) => (n.kind === 'source' ? n.label.length * 7.2 : n.label.length * 6.4);
+/** screen-space box a label would occupy at a given placement around a node */
+function labelBox(p: Placement, sx: number, sy: number, rr: number, w: number): Box {
+  if (p === 'b') return { x1: sx - w / 2 - 3, y1: sy + rr + 5, x2: sx + w / 2 + 3, y2: sy + rr + 20 };
+  if (p === 't') return { x1: sx - w / 2 - 3, y1: sy - rr - 20, x2: sx + w / 2 + 3, y2: sy - rr - 5 };
+  if (p === 'r') return { x1: sx + rr + 5, y1: sy - 8, x2: sx + rr + 9 + w, y2: sy + 8 };
+  return { x1: sx - rr - 9 - w, y1: sy - 8, x2: sx - rr - 5, y2: sy + 8 };
+}
 
 export function Graph() {
   const workflows = useStore($visibleWorkflows);
@@ -76,6 +85,7 @@ export function Graph() {
   const animRef = useRef(0);
   const dragRef = useRef<string | null>(null);
   const appliedForcesRef = useRef({ linkDistance: DEFAULT_SETTINGS.linkDistance, repulsion: DEFAULT_SETTINGS.repulsion });
+  const lastPlacementRef = useRef(new Map<string, Placement>());
 
   /* ---------------- model ---------------- */
   const hidden = useMemo(() => new Set(settings.hiddenCompanies), [settings.hiddenCompanies]);
@@ -146,12 +156,13 @@ export function Graph() {
       minY = Math.min(minY, n.y - n.r);
       maxY = Math.max(maxY, n.y + n.r);
     }
-    const pad = { l: 88, r: 88 + (controlsOpenRef.current ? 268 : 0), t: 56, b: 110 };
+    // side labels can stick out ~120px beyond the node circles
+    const pad = { l: 118, r: 118 + (controlsOpenRef.current ? 268 : 0), t: 60, b: 150 };
     const availW = Math.max(120, w - (panelOpenRef.current ? PANEL_W : 0) - pad.l - pad.r);
     const availH = Math.max(120, h - pad.t - pad.b);
     const bw = Math.max(1, maxX - minX);
     const bh = Math.max(1, maxY - minY + 22);
-    const k = clamp(Math.min(availW / bw, availH / bh), MIN_K, 1.35);
+    const k = clamp(Math.min(availW / bw, availH / bh), MIN_K, 1.15);
     const cx = pad.l + availW / 2;
     const cy = pad.t + availH / 2;
     const target = { k, x: cx - ((minX + maxX) / 2) * k, y: cy - ((minY + maxY + 22) / 2) * k };
@@ -196,7 +207,7 @@ export function Graph() {
     if (simRef.current) return simRef.current;
     const link = forceLink<GraphNode, GraphLink>([])
       .distance((l) => (l.kind === 'source' ? settingsRef.current.linkDistance * 1.4 : settingsRef.current.linkDistance))
-      .strength((l) => (l.kind === 'source' ? 0.1 : 0.7) / Math.max(1, Math.min(l.source.degree, l.target.degree)));
+      .strength((l) => (l.kind === 'source' ? 0.25 / Math.sqrt(Math.max(1, l.source.degree)) : 0.7 / Math.max(1, Math.min(l.source.degree, l.target.degree))));
     const cluster = forceCluster().strength(0.22);
     const sim = forceSimulation<GraphNode, GraphLink>([])
       .alphaDecay(0.035)
@@ -255,7 +266,7 @@ export function Graph() {
     const sim = ensureSim();
     const link = linkRef.current!;
     for (const n of graph.nodes) nodeMapRef.current.set(n.id, n);
-    clusterRef.current!.anchors(graph.anchors);
+    clusterRef.current!.anchors(graph.anchors).strength(graph.anchors.size <= 1 ? 0.05 : 0.22);
     sim.nodes(graph.nodes);
     link.links(graph.links);
     userMovedRef.current = false;
@@ -303,7 +314,7 @@ export function Graph() {
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
       const delta = e.deltaMode === 1 ? e.deltaY * 20 : e.deltaY;
-      const k = clamp(v.k * Math.exp(-delta * (e.ctrlKey ? 0.01 : 0.0018)), MIN_K, MAX_K);
+      const k = clamp(v.k * Math.exp(-delta * (e.ctrlKey ? 0.01 : 0.0014)), MIN_K, MAX_K);
       const r = k / v.k;
       cancelAnimationFrame(animRef.current);
       userMovedRef.current = true;
@@ -329,6 +340,11 @@ export function Graph() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  // a selection that the current user can no longer see closes the panel
+  useEffect(() => {
+    if (selectedId && !workflows.some((w) => w.id === selectedId)) setSelectedId(null);
+  }, [workflows, selectedId]);
 
   // keep ?focus= in the URL so the view is shareable
   useEffect(() => {
@@ -444,30 +460,52 @@ export function Graph() {
   const isLinkHi = (l: GraphLink) =>
     (!!hoverId && (l.source.id === hoverId || l.target.id === hoverId)) || (!!selectedId && (l.source.id === selectedId || l.target.id === selectedId));
 
-  // which labels to draw: zoom fade, hubs always, hovered neighbourhood always, greedy occlusion for the rest
-  const labelVisible = useMemo(() => {
-    const out = new Set<string>();
-    if (!settings.showLabels) return out;
+  // which labels to draw and where: zoom fade, hubs always, hovered neighbourhood always,
+  // then greedy placement (below, above, right, left) that avoids other labels and other nodes.
+  // The previous placement is tried first so labels do not flicker while the layout moves.
+  const labelPlacement = new Map<string, Placement>();
+  if (settings.showLabels) {
     const prio = (n: GraphNode) =>
       (n.id === selectedId ? 1000 : 0) + (n.id === hoverId ? 900 : 0) + (hoverSet?.has(n.id) ? 800 : 0) + (n.kind === 'source' ? 200 : 0) + (n.hub ? 100 : 0) + n.r;
     const order = [...graph.nodes].sort((a, b) => prio(b) - prio(a));
-    const boxes: Box[] = [];
+    const nodeBoxes: Box[] = graph.nodes.map((n) => {
+      const sx = n.x * k + view.x;
+      const sy = n.y * k + view.y;
+      const rr = n.r * k + 2;
+      return { x1: sx - rr, y1: sy - rr, x2: sx + rr, y2: sy + rr, id: n.id };
+    });
+    const labelBoxes: Box[] = [];
     for (const n of order) {
       const forced = n.id === selectedId || n.id === hoverId || (hoverSet?.has(n.id) ?? false);
       if (hoverSet && !forced) continue;
       if (matched && !matched.has(n.id) && !forced) continue;
       if (!forced && !n.hub && k < LABEL_FADE_START) continue;
       const w = estWidth(n);
-      const cx = n.x * k + view.x;
-      const top = (n.y + n.r) * k + view.y + 5;
-      const box = { x1: cx - w / 2 - 4, x2: cx + w / 2 + 4, y1: top, y2: top + 15 };
-      if (!forced && boxes.some((b) => intersects(b, box))) continue;
-      boxes.push(box);
-      out.add(n.id);
+      const sx = n.x * k + view.x;
+      const sy = n.y * k + view.y;
+      const rr = n.r * k;
+      const last = lastPlacementRef.current.get(n.id);
+      const candidates = last ? [last, ...PLACEMENTS.filter((p) => p !== last)] : PLACEMENTS;
+      let chosen: Placement | null = null;
+      for (const p of candidates) {
+        const box = labelBox(p, sx, sy, rr, w);
+        const clash = labelBoxes.some((b) => intersects(b, box)) || nodeBoxes.some((b) => b.id !== n.id && intersects(b, box));
+        if (!clash) {
+          chosen = p;
+          labelBoxes.push(box);
+          break;
+        }
+      }
+      if (!chosen && forced) {
+        chosen = last ?? 'b';
+        labelBoxes.push(labelBox(chosen, sx, sy, rr, w));
+      }
+      if (chosen) {
+        labelPlacement.set(n.id, chosen);
+        lastPlacementRef.current.set(n.id, chosen);
+      }
     }
-    return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph, settings.showLabels, selectedId, hoverId, hoverSet, matched, view.x, view.y, k, draggingId, size.w]);
+  }
   const fade = clamp((k - LABEL_FADE_START) / (LABEL_FADE_END - LABEL_FADE_START), 0, 1);
 
   const dotSpacing = (() => {
@@ -487,6 +525,7 @@ export function Graph() {
       className={s.root}
       data-panel={panelOpen}
       data-panning={panning}
+      data-dragging={draggingId !== null}
       style={{ backgroundSize: `${dotSpacing}px ${dotSpacing}px`, backgroundPosition: `${view.x}px ${view.y}px` }}
     >
       <svg ref={svgRef} className={s.svg} role="img" aria-label="Workflow graph">
@@ -544,10 +583,13 @@ export function Graph() {
               const isSelected = n.id === selectedId;
               const active = isSelected || n.id === hoverId;
               const Icon = n.sourceKind ? SOURCE_ICON[n.sourceKind] : null;
-              const showLabel = labelVisible.has(n.id);
+              const place = labelPlacement.get(n.id);
               const forcedLabel = isSelected || n.id === hoverId || (hoverSet?.has(n.id) ?? false) || n.hub;
-              const labelOpacity = showLabel ? (forcedLabel ? 1 : fade) : 0;
+              const labelOpacity = place ? (forcedLabel ? 1 : fade) : 0;
               const fontSize = (n.kind === 'source' ? 10.5 : 12) / k;
+              const lx = place === 'r' ? n.r + 7 / k : place === 'l' ? -(n.r + 7 / k) : 0;
+              const ly = place === 't' ? -(n.r + 8 / k) : place === 'r' || place === 'l' ? 4.2 / k : n.r + (n.kind === 'source' ? 16 : 17) / k;
+              const anchor = place === 'r' ? 'start' : place === 'l' ? 'end' : 'middle';
               const title = n.wf ? `${n.name} · ${companyMap.get(n.companyId ?? '')?.shortName ?? ''} · ${n.wf.trigger.label}` : `${n.name} · triggers ${n.degree} ${n.degree === 1 ? 'workflow' : 'workflows'}`;
               return (
                 <g
@@ -570,7 +612,6 @@ export function Graph() {
                   onBlur={() => setHoverId((h) => (h === n.id ? null : h))}
                   aria-label={title}
                 >
-                  <title>{title}</title>
                   <circle className={s.hit} r={Math.max(n.r + 6, 14)} />
                   {isSelected && <circle className={s.ring} r={n.r + 4.5} style={{ stroke: color }} vectorEffect="non-scaling-stroke" />}
                   {n.kind === 'source' ? (
@@ -584,9 +625,10 @@ export function Graph() {
                   {n.failing && <circle className={s.statusDot} cx={n.r * 0.72} cy={-n.r * 0.72} r={3.2 / Math.min(1, k)} vectorEffect="non-scaling-stroke" />}
                   <text
                     className={[s.label, n.kind === 'source' ? s.labelSource : '', active ? s.labelActive : ''].join(' ')}
-                    y={n.r + (n.kind === 'source' ? 16 : 17) / k}
+                    x={lx}
+                    y={ly}
                     fontSize={fontSize}
-                    textAnchor="middle"
+                    textAnchor={anchor}
                     strokeWidth={3 / k}
                     style={{ opacity: labelOpacity }}
                     aria-hidden="true"
@@ -638,34 +680,27 @@ export function Graph() {
       />
 
       <div className={s.zoom}>
-        <Tooltip label="Zoom in">
-          <button type="button" className={s.zoomBtn} onClick={() => zoomBy(1.25)} aria-label="Zoom in">
-            <Plus />
-          </button>
-        </Tooltip>
-        <Tooltip label="Zoom out">
-          <button type="button" className={s.zoomBtn} onClick={() => zoomBy(1 / 1.25)} aria-label="Zoom out">
-            <Minus />
-          </button>
-        </Tooltip>
-        <Tooltip label="Reset zoom">
-          <button type="button" className={s.zoomPct} onClick={() => zoomBy(1 / k)} aria-label="Reset zoom to 100%">
-            {Math.round(k * 100)}%
-          </button>
-        </Tooltip>
-        <Tooltip label="Fit to view" kbd="F">
-          <button
-            type="button"
-            className={s.zoomBtn}
-            onClick={() => {
-              userMovedRef.current = true;
-              fitRef.current(true);
-            }}
-            aria-label="Fit to view"
-          >
-            <Maximize2 />
-          </button>
-        </Tooltip>
+        <button type="button" className={s.zoomBtn} data-tip="Zoom in" onClick={() => zoomBy(1.25)} aria-label="Zoom in">
+          <Plus />
+        </button>
+        <button type="button" className={s.zoomBtn} data-tip="Zoom out" onClick={() => zoomBy(1 / 1.25)} aria-label="Zoom out">
+          <Minus />
+        </button>
+        <button type="button" className={s.zoomPct} data-tip="Reset to 100%" onClick={() => zoomBy(1 / k)} aria-label="Reset zoom to 100%">
+          {Math.round(k * 100)}%
+        </button>
+        <button
+          type="button"
+          className={s.zoomBtn}
+          data-tip="Fit to view · F"
+          onClick={() => {
+            userMovedRef.current = true;
+            fitRef.current(true);
+          }}
+          aria-label="Fit to view"
+        >
+          <Maximize2 />
+        </button>
       </div>
 
       {selectedWf && (

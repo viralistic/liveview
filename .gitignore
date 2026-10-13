@@ -7,3 +7,4 @@ dist-artifact/
 .env
 .env.*
 !.env.example
+astro.config.lead.mjs

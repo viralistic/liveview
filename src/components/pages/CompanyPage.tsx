@@ -15,7 +15,7 @@ import { NodeIcon } from '../ui/NodeIcon';
 import { SeverityIcon } from '../ui/SeverityIcon';
 import { Bars } from '../ui/Sparkline';
 import ui from '../ui/ui.module.css';
-import { ExecutionsChart, ChartLegend } from './charts/ExecutionsChart';
+import { DotMatrix } from './charts/DotMatrix';
 import { ActivityFeed, IssueRow, KpiTile, OnlineNow, PageHeader } from './shared';
 import s from './pages.module.css';
 
@@ -38,10 +38,11 @@ export function CompanyPage({ companyId }: { companyId: string }) {
   const health = companyHealth(companyId);
   const issues = wfs.flatMap((w) => w.issues).sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
   const creds = CREDENTIALS.filter((c) => c.companyId === companyId || c.usedBy.some((id) => wfs.some((w) => w.id === id)));
-  const series = [
-    { id: 'ok', label: 'Succeeded', color: company.color, values: agg.runs.map((v, i) => v - (agg.failures[i] ?? 0)) },
-    { id: 'failed', label: 'Failed', color: '#ef4444', values: agg.failures },
-  ];
+  const breakdown = wfs
+    .slice()
+    .sort((a, b) => b.stats.runs7d - a.stats.runs7d)
+    .slice(0, 5)
+    .map((w) => ({ id: w.id, label: w.name, color: company.color, values: w.stats.series7d }));
   const activity = ACTIVITY.filter((a) => a.companyId === companyId);
   const opportunities = issues.filter((i) => i.estSavings);
   const savings = opportunities.reduce(
@@ -62,7 +63,7 @@ export function CompanyPage({ companyId }: { companyId: string }) {
           </>
         }
         title={
-          <span className={s.hero}>
+          <span className={s.titleRow}>
             <span className={s.heroMark} style={{ background: company.color }}>
               {company.initials}
             </span>
@@ -123,9 +124,9 @@ export function CompanyPage({ companyId }: { companyId: string }) {
       <div className={s.grid2}>
         <div className={s.stack}>
           <Card>
-            <CardHeader title="Executions" sub="Last 7 days, succeeded vs failed." icon={<Activity />} action={<ChartLegend series={series} />} />
+            <CardHeader title="Executions" sub="Last 7 days in 6-hour buckets. Pink dots are failed runs, rings are the current bucket." icon={<Activity />} />
             <CardBody>
-              <ExecutionsChart series={series} height={200} />
+              <DotMatrix values={agg.runs} failures={agg.failures} breakdown={breakdown} rows={8} height={170} tone="light" />
             </CardBody>
           </Card>
 

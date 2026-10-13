@@ -17,7 +17,7 @@ export function tierOf(z: number): Tier {
   if (z < 0.11) return 'tiny';
   if (z < 0.22) return 'compact';
   if (z < 0.45) return 'mini';
-  if (z < 0.55) return 'mini2';
+  if (z < 0.5) return 'mini2';
   return 'full';
 }
 export const MARKER_ZOOM = 0.45;
@@ -46,7 +46,6 @@ export class ViewportController {
   private els: Els | null = null;
   private raf: number | null = null;
   private interactListeners = new Set<() => void>();
-  private followTarget: Pt | null = null;
 
   attach(els: Els) {
     this.els = els;
@@ -74,7 +73,6 @@ export class ViewportController {
   }
   /** call when the person pans/zooms by hand (stops follow mode) */
   interacted() {
-    this.followTarget = null;
     for (const l of this.interactListeners) l();
   }
 
@@ -184,7 +182,6 @@ export class ViewportController {
   }
   /** Follow mode: ease the camera towards a world point every frame. */
   followPoint(p: Pt) {
-    this.followTarget = p;
     if (this.raf != null) return; // an explicit animation is running; let it finish
     const { z } = this.vp;
     const tx = p.x - this.effW / 2 / z;

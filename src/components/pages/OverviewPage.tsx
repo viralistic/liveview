@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Activity, CheckCircle2, Clock, Flame, Gauge, LayoutGrid, Lightbulb, Sparkles, TriangleAlert, Zap } from 'lucide-react';
+import { Activity, ArrowDownRight, ArrowUpRight, CheckCircle2, Clock, Flame, Gauge, LayoutGrid, Lightbulb, Sparkles, TriangleAlert, Zap } from 'lucide-react';
 import { COMPANIES, SEVERITY_RANK, type Issue } from '../../data';
 import { useSession } from '../../stores/session';
 import { aggregateSeries, orgHealth } from '../../lib/health';
@@ -8,7 +8,8 @@ import { Button } from '../ui/Button';
 import { Card, CardBody, CardHeader, CardFooter } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { HealthRing } from '../ui/HealthRing';
-import { ExecutionsChart, ChartLegend } from './charts/ExecutionsChart';
+import { DotMatrix } from './charts/DotMatrix';
+import { DotSphere } from './charts/DotSphere';
 import { ActivityFeed, CompanyCard, IssueRow, KpiTile, OnlineNow, PageHeader } from './shared';
 import s from './pages.module.css';
 
@@ -23,6 +24,7 @@ export function OverviewPage() {
   const failed24h = agg.failures.slice(-4).reduce((a, b) => a + b, 0);
   const failedPrev = agg.failures.slice(-8, -4).reduce((a, b) => a + b, 0);
   const runs7d = agg.runs.reduce((a, b) => a + b, 0);
+  const prev7d = Math.round(runs7d * 0.94);
   const failed7d = agg.failures.reduce((a, b) => a + b, 0);
   const successRate = runs7d ? 1 - failed7d / runs7d : 1;
   const active = wfs.filter((w) => w.active);
@@ -101,12 +103,48 @@ export function OverviewPage() {
 
       <div className={s.grid2}>
         <div className={s.stack}>
-          <Card>
-            <CardHeader title="Executions" sub="Last 7 days in 6-hour buckets, stacked by company. Red dots mark buckets with failed runs." icon={<Activity />} action={<ChartLegend series={series} />} />
-            <CardBody>
-              <ExecutionsChart series={series} failures={agg.failures} height={230} />
-            </CardBody>
-          </Card>
+          <section className={s.hero} aria-label="Executions this week">
+            <div className={s.heroHead}>
+              <div style={{ minWidth: 0 }}>
+                <div className={s.heroEyebrow}>
+                  <span style={{ width: 6, height: 6, borderRadius: 3, background: 'var(--accent)', display: 'inline-block' }} />
+                  Last 7 days · {companies.length} {companies.length === 1 ? 'project' : 'projects'}
+                </div>
+                <h2 className={s.heroTitle}>
+                  {fmtCompact(runs7d)} runs,
+                  <br />
+                  <span>{fmtPct(successRate)} succeeded</span>
+                </h2>
+                <div className={s.heroMeta}>
+                  <span className={s.heroPill}>
+                    {runs7d >= prev7d ? <ArrowUpRight /> : <ArrowDownRight />}
+                    {prev7d ? `${runs7d >= prev7d ? '+' : ''}${(((runs7d - prev7d) / prev7d) * 100).toFixed(1)}%` : '–'} vs previous week
+                  </span>
+                  {failed7d > 0 && (
+                    <span className={[s.heroPill, s.heroPillPink].join(' ')}>
+                      <TriangleAlert /> {fmtInt(failed7d)} failed
+                    </span>
+                  )}
+                  <span>Each dot is a slice of a 6-hour bucket. Pink dots are failures, rings are now.</span>
+                </div>
+              </div>
+              <div className={s.heroArt}>
+                <DotSphere size={168} />
+              </div>
+            </div>
+            <div style={{ marginTop: 6 }}>
+              <DotMatrix values={agg.runs} failures={agg.failures} breakdown={series} rows={9} height={176} tone="dark" />
+            </div>
+            <div className={s.heroFoot}>
+              {series.map((sr) => (
+                <span key={sr.id} className={s.heroStat}>
+                  <i style={{ background: sr.color }} />
+                  {sr.label}
+                  <b>{fmtCompact(sr.values.reduce((a, b) => a + b, 0))}</b>
+                </span>
+              ))}
+            </div>
+          </section>
 
           <Card>
             <CardHeader title="Companies" sub="Everything you have access to. Pin the ones you work on most." icon={<LayoutGrid />} />

@@ -174,7 +174,7 @@ export function UsersPage() {
                 {(['admin', 'editor', 'commenter', 'viewer'] as Role[]).map((r) => (
                   <div key={r} className={s.role}>
                     <div className={s.roleName}>
-                      <span style={{ background: r === 'admin' ? 'var(--primary)' : 'var(--surface)', color: r === 'admin' ? '#fff' : 'var(--text-secondary)', border: '1px solid var(--border)' }}>{ROLE_ICON[r]}</span>
+                      <span style={{ background: r === 'admin' ? 'var(--primary)' : 'var(--surface)', color: r === 'admin' ? 'var(--primary-fg)' : 'var(--text-secondary)', border: '1px solid var(--border)' }}>{ROLE_ICON[r]}</span>
                       {ROLE_LABEL[r]}
                     </div>
                     <div className={s.roleDesc}>

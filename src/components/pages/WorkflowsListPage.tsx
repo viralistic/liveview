@@ -152,7 +152,7 @@ export function WorkflowsListPage() {
                     <td>
                       <CompanyChip company={c} />
                     </td>
-                    <td className={s.muted} style={{ whiteSpace: 'nowrap', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis' }}>{w.trigger.label}</td>
+                    <td className={s.muted} style={{ whiteSpace: 'nowrap', maxWidth: 128, overflow: 'hidden', textOverflow: 'ellipsis' }} title={w.trigger.label}>{w.trigger.label}</td>
                     <td>
                       <Badge tone={!w.active ? 'neutral' : w.stats.lastStatus === 'error' ? 'danger' : 'success'} dot>
                         {!w.active ? 'Inactive' : w.stats.lastStatus === 'error' ? 'Failing' : w.stats.lastStatus === 'running' ? 'Running' : 'Active'}
@@ -160,8 +160,8 @@ export function WorkflowsListPage() {
                     </td>
                     <td>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                        <Bars data={w.stats.series7d} failures={w.stats.failures7d} width={64} height={20} />
-                        <span className="tnum" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', minWidth: 34 }}>{fmtCompact(w.stats.runs7d)}</span>
+                        <Bars data={w.stats.series7d} failures={w.stats.failures7d} width={56} height={20} />
+                        <span className="tnum" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', minWidth: 30 }}>{fmtCompact(w.stats.runs7d)}</span>
                       </span>
                     </td>
                     <td className={ui.num} style={{ color: w.stats.successRate < 0.95 ? 'var(--danger-fg)' : undefined }}>{fmtPct(w.stats.successRate, 0)}</td>

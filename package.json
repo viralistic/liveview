@@ -27,6 +27,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@dicebear/collection": "^9.4.2",
+    "@dicebear/core": "^9.4.3",
     "@types/d3-force": "^3.0.10",
     "@types/node": "^22.20.5",
     "@types/react": "^19.3.0",

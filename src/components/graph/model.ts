@@ -78,7 +78,7 @@ export function radiusFor(runs7d: number): number {
 }
 export const SOURCE_RADIUS: Record<SourceKind, number> = { internet: 24, schedule: 22, app: 20, error: 20 };
 
-export function shortLabel(name: string, max = 26): string {
+export function shortLabel(name: string, max = 32): string {
   return name.length > max ? name.slice(0, max - 1).trimEnd() + '…' : name;
 }
 

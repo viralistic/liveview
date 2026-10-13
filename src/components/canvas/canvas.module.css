@@ -21,7 +21,7 @@
   background-size: 24px 24px;
 }
 .world, .overlay { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; will-change: transform; }
-.overlay { pointer-events: none; z-index: 3; }
+.overlay { pointer-events: none; z-index: 4; }
 .overlay > * { pointer-events: auto; }
 .svgWorld { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
 .world { z-index: 1; }
@@ -49,6 +49,7 @@
 .sectionMeta { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .sectionMeta b { font-weight: var(--fw-medium); color: var(--text-secondary); }
 .sectionDot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.section[data-tier='tiny'] .sectionMeta, .section[data-tier='tiny'] .sectionLabel > :last-child { display: none; }
 .sectionActions {
   position: absolute; right: 0; bottom: 100%; transform-origin: 100% 100%;
   display: flex; align-items: center; gap: 6px; padding: 0 0 8px; white-space: nowrap;
@@ -59,10 +60,11 @@
 /* ---------- heat blobs ---------- */
 .heat {
   position: absolute; border-radius: 50%; pointer-events: none;
-  background: radial-gradient(closest-side, var(--heat) 0%, var(--heat) 28%, transparent 100%);
+  background: radial-gradient(closest-side, var(--heat) 0%, var(--heat) 22%, transparent 100%);
   opacity: 0; transition: opacity 360ms var(--ease-out);
 }
-.heat[data-on='true'] { opacity: 0.32; }
+.heat[data-on='true'] { opacity: var(--heat-o, 0.3); }
+.sectionSvg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 
 /* ---------- cards ---------- */
 .card {
@@ -104,6 +106,7 @@
 .row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .row2 { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .card[data-tier='tiny'] .row2 { display: none; }
+.card[data-tier='tiny'] .row > :first-child { display: none; }
 .spacer { flex: 1; }
 .statusDot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
 .companyChip {
@@ -164,14 +167,14 @@
 .portIn { position: absolute; width: 8px; height: 14px; border-radius: 3px; background: #fff; border: 1.5px solid rgba(0, 0, 0, 0.3); transform: translate(-50%, -50%); }
 .portLabel { position: absolute; transform: translate(0, -50%); margin-left: 10px; font-size: max(10px, calc(10px / var(--z))); color: var(--text-subtle); white-space: nowrap; line-height: 1; }
 .miniNode {
-  position: absolute; width: 72px; height: 72px; border-radius: 16px; background: #fff;
+  position: absolute; width: 80px; height: 80px; border-radius: 16px; background: #fff;
   border: 2px solid rgba(0, 0, 0, 0.12); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   display: grid; place-items: center;
 }
-.miniNode[data-trigger='true'] { border-radius: 36px 16px 16px 36px; }
+.miniNode[data-trigger='true'] { border-radius: 40px 16px 16px 40px; }
 .miniNode[data-disabled='true'] { opacity: 0.4; border-style: dashed; }
 .miniNode[data-failed='true'] { border-color: rgba(239, 68, 68, 0.7); }
-.miniNode svg { width: 36px; height: 36px; }
+.miniNode svg { width: 38px; height: 38px; }
 .miniConn { fill: none; stroke: rgba(0, 0, 0, 0.26); stroke-width: 3px; }
 
 /* ---------- sources ---------- */
@@ -181,6 +184,7 @@
 .sourceIcon { position: absolute; left: 50%; top: 50%; color: var(--text-secondary); display: grid; }
 .sourceIcon svg { width: 18px; height: 18px; }
 .sourceLabel { position: absolute; left: 50%; top: 100%; transform: translate(-50%, 0) scale(var(--inv)); transform-origin: 50% 0; padding-top: 7px; font-size: 11.5px; font-weight: var(--fw-medium); color: var(--text-muted); white-space: nowrap; text-align: center; }
+.source[data-tier='tiny'] .sourceLabel { display: none; }
 .sourceLabel small { display: block; font-size: 10.5px; font-weight: var(--fw-regular); color: var(--text-subtle); }
 
 /* ---------- edges (SVG, world) ---------- */
@@ -193,6 +197,12 @@
 /* ---------- comment pins / markers / popovers (overlay, world) ---------- */
 .anchor { position: absolute; width: 0; height: 0; }
 .pinWrap { position: absolute; left: 0; bottom: 0; transform: scale(var(--inv)); transform-origin: 0 100%; }
+.pinWrap[data-dir='down'] { bottom: auto; top: 0; transform-origin: 0 0; }
+.pinWrap[data-dir='down'] .pin { border-radius: 3px 14px 14px 14px; }
+.pinWrap[data-dir='down'] .popThread { bottom: auto; top: 0; }
+.pinWrap[data-small='true'] .pin { width: 22px; height: 22px; border-width: 1.5px; }
+.pinWrap[data-small='true'] .pinCount { right: -5px; top: -5px; min-width: 14px; height: 14px; font-size: 9px; }
+.pinWrap[data-small='true'] .popThread { left: 30px; }
 .pin {
   width: 28px; height: 28px; border-radius: 14px 14px 14px 3px; background: var(--surface);
   border: 2px solid var(--brand); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -239,7 +249,7 @@
 .linkBtn svg { width: 12px; height: 12px; }
 
 /* ---------- cursors (screen space) ---------- */
-.cursors { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 5; }
+.cursors { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 3; }
 .cursor { position: absolute; left: 0; top: 0; will-change: transform; }
 .cursor svg { width: 18px; height: 18px; display: block; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25)); }
 .cursorLabel {
@@ -271,6 +281,7 @@
 .crumbMark { width: 16px; height: 16px; border-radius: 5px; display: inline-grid; place-items: center; font-size: 8px; font-weight: var(--fw-semibold); color: #fff; flex: none; }
 
 .topRight { position: absolute; right: calc(16px + var(--rail)); top: 16px; z-index: 10; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; transition: right var(--dur-slow) var(--ease-out); }
+.bottomRight { position: absolute; right: calc(16px + var(--rail)); bottom: 16px; z-index: 10; transition: right var(--dur-slow) var(--ease-out); }
 .minimap { width: 176px; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(6px); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-sm); padding: 6px; cursor: crosshair; }
 .minimap svg { width: 100%; height: auto; display: block; }
 
@@ -307,3 +318,6 @@
 @keyframes slideIn { from { transform: translateX(100%); } to { transform: none; } }
 @keyframes ring { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(1.55); opacity: 0; } }
 @keyframes nodePulse { 0%, 100% { opacity: 0.15; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.03); } }
+.rail, .pop, .cursorCard { user-select: text; -webkit-user-select: text; }
+.popIssue::before { content: ''; position: absolute; left: 0; right: 0; top: -12px; height: 12px; }
+.dot { transform-box: fill-box; transform-origin: center; }

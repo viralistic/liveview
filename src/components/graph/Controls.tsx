@@ -97,7 +97,7 @@ export function Controls({
           <label className={s.search}>
             <Search />
             <input
-              type="search"
+              type="text"
               placeholder="Filter workflows"
               value={settings.query}
               onChange={(e) => onChange({ query: e.target.value })}

@@ -36,7 +36,7 @@ function persisted<T>(key: string, initial: T): WritableAtom<T> {
   return store;
 }
 
-export const $currentUserId = persisted<string>('lv.user', 'u-noor');
+export const $currentUserId = persisted<string>('lv.user', 'u-marrallisa');
 export const $pinned = persisted<string[]>('lv.pinned', COMPANIES.filter((c) => c.defaultPinned).map((c) => c.id));
 export const $grants = persisted<Grant[]>('lv.grants', INITIAL_GRANTS);
 export const $sidebarCollapsed = persisted<boolean>('lv.sidebar', false);
@@ -76,6 +76,27 @@ export function useSession() {
   );
 }
 
+/** Appearance: follows the OS unless the person picks one. */
+export type ThemeChoice = 'system' | 'light' | 'dark';
+export const $theme = persisted<ThemeChoice>('lv.theme', 'system');
+export function applyTheme(choice: ThemeChoice) {
+  if (typeof document === 'undefined') return;
+  if (choice === 'system') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', choice);
+}
+export function cycleTheme() {
+  const order: ThemeChoice[] = ['system', 'light', 'dark'];
+  const next = order[(order.indexOf($theme.get()) + 1) % order.length]!;
+  $theme.set(next);
+  applyTheme(next);
+  toast(next === 'system' ? 'Theme follows your system' : `${next === 'dark' ? 'Dark' : 'Light'} theme`);
+}
+
+/** Video modal (the avatar easter egg). */
+export const $video = atom<{ url: string; title: string } | null>(null);
+export const openVideo = (url: string, title: string) => $video.set({ url, title });
+export const closeVideo = () => $video.set(null);
+
 /** Share dialog: which scope is being shared (null = closed). */
 export const $shareDialog = atom<Scope | null>(null);
 export const openShare = (scope: Scope) => $shareDialog.set(scope);
@@ -112,6 +133,6 @@ export function setGrant(userId: string, scope: Scope, role: Role | null, grante
 export function resetDemo() {
   $grants.set(INITIAL_GRANTS);
   $pinned.set(COMPANIES.filter((c) => c.defaultPinned).map((c) => c.id));
-  $currentUserId.set('u-noor');
+  $currentUserId.set('u-marrallisa');
   toast('Demo data reset');
 }

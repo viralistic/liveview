@@ -7,9 +7,9 @@ export interface SegItem {
   icon?: ReactNode;
   href?: string;
 }
-export function Segmented({ items, value, onChange, dark }: { items: SegItem[]; value: string; onChange?: (id: string) => void; dark?: boolean }) {
+export function Segmented({ items, value, onChange, dark, pill }: { items: SegItem[]; value: string; onChange?: (id: string) => void; dark?: boolean; pill?: boolean }) {
   return (
-    <div className={[s.seg, dark ? s.segDark : ''].join(' ')} role="tablist">
+    <div className={[s.seg, dark ? s.segDark : '', pill ? s.segPill : ''].join(' ')} role="tablist">
       {items.map((it) =>
         it.href ? (
           <a key={it.id} href={it.href} className={s.segItem} aria-current={it.id === value ? 'true' : undefined}>
