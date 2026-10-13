@@ -307,6 +307,10 @@
 .markerWrap { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%) scale(var(--inv)); }
 .marker { display: grid; place-items: center; cursor: pointer; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.18)); transition: transform var(--dur-fast) var(--ease-out); }
 .marker:hover { transform: scale(1.1); }
+.marker { position: relative; }
+.markerFix { position: absolute; right: -3px; top: -3px; width: 9px; height: 9px; border-radius: 50%; background: var(--product); border: 1.5px solid var(--surface); display: grid; place-items: center; color: #fff; }
+.markerFix[data-applied='true'] { width: 12px; height: 12px; right: -4px; top: -4px; }
+.issueSmart { margin-top: 10px; }
 .popIssue { left: 50%; top: 20px; transform: translateX(-50%); width: 300px; }
 .issueHead { display: flex; align-items: flex-start; gap: 8px; }
 .issueTitle { font-size: 12.5px; font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); line-height: 1.3; }

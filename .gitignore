@@ -8,3 +8,5 @@ dist-artifact/
 .env.*
 !.env.example
 astro.config.lead.mjs
+astro.config.products.mjs
+astro.config.canvas.mjs
