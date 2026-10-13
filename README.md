@@ -1,4 +1,4 @@
-# LiveView for n8n
+# Viralistic LiveView
 
 A multiplayer workflow manager for n8n. One canvas for every client, every workflow and everyone who touches them.
 
@@ -25,27 +25,31 @@ npm run check    # astro type check
 
 | Route | What you see |
 | --- | --- |
-| `/` | Overview: executions, success rate, failures, health score, findings sorted by severity, improvement opportunities with estimated savings, companies, activity, who is online. |
-| `/workflows` | All workflows as a list with filters. Click a row for the detail panel. |
-| `/workflows/graph` | Obsidian-style cluster graph. Hover to highlight neighbours, click for details, filters and legend. |
-| `/workflows/canvas` | Figma-style canvas: sections per company, semantic zoom into node graphs, sources, inter-workflow edges, health heatmap, comments, live cursors, share links with the exact viewport. |
-| `/companies/<slug>` | Company dashboard: KPIs, chart, workflows, findings, access and credentials for one client. |
+| `/` | Overview: a greeting, what you manage as clickable pills, five tiles with details on hover, companies that only speak up when something breaks, action-first findings, one improvement, activity. Export the report as PDF or send it to a client. |
+| `/planner` | Week calendar with client calls and planned work, plus an inbox. Tag someone with `@`, the model suggests high, medium or low; high is planned within a day, medium within three working days, low only reaches the inbox. |
+| `/workflows/grid`, `/workflows`, `/workflows/canvas`, `/workflows/graph` | The same workflows as cards, a list, the Figma-style canvas (sections per project, zoom into the real node graphs, sources, travelling-dot edges, heatmap, Smart fix, live cursors, comments, floating glass detail panel) and the Obsidian-style graph (threads with travelling blobs, hover-only labels, cursors). |
+| `/improvements` | Everything that would make the workflows cheaper or faster, biggest win first, with estimated savings. |
+| `/products` | Reusable automations in four categories, shown as a live-firing gallery. One source of truth: update a product and every instance follows. Purple everywhere a product is used. |
+| `/changelog` | n8n releases read by the model for what they touch. Simple changes are applied in a staging container, tested, then promoted to live. |
+| `/companies`, `/companies/<slug>` | The projects you manage; each with its trajectory (introduction, visit, inspiration workshop, business case, proof of concept, build, test, live), who to ask (process owner, technical owner, client contacts), what the client wants, the communication log, workflows, findings, people and credentials. |
 | `/users` | People, their highest role, where they have access, an access matrix per company, and the role model. |
 | `/credentials` | Every credential, who owns it, what uses it, and what breaks when it expires. |
+
+Smart fix: on any finding (breaking or wasteful) the model proposes a concrete change set with a test plan; the project's technical owner accepts or rejects it before anything touches n8n.
 
 Switch users from the bottom of the sidebar. Pin companies with the pin icon. Share anything with the black **Share** button; changes you make in the dialog apply to the demo immediately and persist in `localStorage` (use **Reset** in the user switcher to start over).
 
 ## Design
 
-The look follows n8n's 2026 rebrand (the design-system tokens that shipped with it): Geist and Geist Mono, a monochrome primary, pink only as an accent, a grey canvas with white cards and hairline borders. The sidebar is black, the workspace is grey, content cards are white. Tokens live in `src/styles/global.css`.
+The look follows n8n's 2026 rebrand (the design-system tokens that shipped with it): Geist and Geist Mono, hairline borders, calm greys, the n8n pink as the one accent, purple reserved for products, no yellow. Light and dark themes (toggle in the top bar, follows the system by default); the sidebar is light grey in the light theme and black in the dark theme. Health is pink when low and fluorescent when full. Hot colours exist only inside the canvas. Tokens live in `src/styles/global.css`.
 
 ## Structure
 
 ```
 src/
-  data/         companies, workflows (nodes, connections, stats, issues), users + grants, credentials, comments, activity
+  data/         companies, workflows, users + grants, credentials, comments, activity, products, projects (trajectory + communication), planner, fixes, changelog
   lib/          access.ts (hierarchical roles), layout.ts (canvas world layout), health.ts, format.ts
-  stores/       session state shared across islands (current user, pins, grants, share dialog)
+  stores/       session (user, theme, pins, grants, share), planner (tasks, scheduling), fixes (smart fix proposals)
   components/
     shell/      black sidebar, topbar with presence + share, command palette, toast
     share/      Figma-style share dialog with hierarchy picker
