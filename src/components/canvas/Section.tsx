@@ -88,7 +88,7 @@ export const Section = memo(function Section({ section, company, workflows, visi
                       <animateMotion dur={`${dur.toFixed(2)}s`} repeatCount="indefinite" begin={`-${(dur * 0.37).toFixed(2)}s`}>
                         <mpath href={`#${eid}`} />
                       </animateMotion>
-                      <circle className={s.dot} r={2.6} fill="rgba(0,0,0,0.5)" />
+                      <circle className={[s.dot, s.srcDot].join(' ')} r={2.6} />
                     </g>
                   )}
                 </g>

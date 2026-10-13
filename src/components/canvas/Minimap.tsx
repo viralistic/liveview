@@ -27,16 +27,16 @@ export function Minimap({ ctrl, layout, visibleIds, workflowById }: { ctrl: View
     >
       <svg viewBox={vb} aria-hidden="true">
         {layout.sections.map((sec) => (
-          <rect key={sec.companyId} x={sec.x} y={sec.y} width={sec.w} height={sec.h} rx={60} fill="rgba(0,0,0,0.035)" stroke="rgba(0,0,0,0.1)" strokeWidth={14} />
+          <rect key={sec.companyId} className={s.mmSection} x={sec.x} y={sec.y} width={sec.w} height={sec.h} rx={60} strokeWidth={14} />
         ))}
         {Object.values(layout.cards).map((c) => {
           const wf = workflowById.get(c.workflowId);
           const locked = !visibleIds.has(c.workflowId);
           const failing = !!wf && wf.active && wf.stats.lastStatus === 'error';
-          const color = failing ? 'rgba(239,68,68,0.55)' : locked ? 'rgba(0,0,0,0.06)' : wf?.active ? companyById(c.companyId).color : 'rgba(0,0,0,0.12)';
-          return <rect key={c.workflowId} x={c.x} y={c.y} width={c.w} height={c.h} rx={40} fill={color} fillOpacity={failing || locked || !wf?.active ? 1 : 0.35} />;
+          const color = failing ? '#ef4444' : locked || !wf?.active ? 'currentColor' : companyById(c.companyId).color;
+          return <rect key={c.workflowId} x={c.x} y={c.y} width={c.w} height={c.h} rx={40} fill={color} fillOpacity={failing ? 0.6 : locked ? 0.08 : !wf?.active ? 0.14 : 0.35} />;
         })}
-        <rect x={vis.x} y={vis.y} width={vis.w} height={vis.h} fill="rgba(0,0,0,0.04)" stroke="rgba(0,0,0,0.7)" strokeWidth={24} rx={20} />
+        <rect className={s.mmView} x={vis.x} y={vis.y} width={vis.w} height={vis.h} strokeWidth={24} rx={20} />
       </svg>
     </div>
   );
