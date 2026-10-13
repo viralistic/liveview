@@ -44,7 +44,7 @@ function rewriteLink(href) {
 }
 
 function rewriteHtml(html, depth, isRoot) {
-  html = html.replace(/(href|src|component-url|renderer-url)="\/_astro\//g, '$1="./_astro/');
+  html = html.replace(/(href|src|component-url|renderer-url)="\/(_astro|app)\//g, '$1="./$2/');
   html = html.replace(/href="\/favicon\.svg"/g, 'href="./favicon.svg"');
   html = html.replace(/href="(\/[^"]*)"/g, (_, h) => `href="${rewriteLink(h)}"`);
   const base = `<base href="${depth ? '../'.repeat(depth) : './'}">`;
@@ -58,6 +58,7 @@ function rewriteHtml(html, depth, isRoot) {
       .replace(/<\/head>/i, '')
       .replace(/<body[^>]*>/i, '')
       .replace(/<\/body>/i, '');
+    html = html.replace(/<title>[^<]*<\/title>/, '<title>LiveView for n8n</title>');
     html = base + '\n' + html.trim() + '\n';
   } else {
     html = html.replace(/<head>/i, '<head>' + base);
@@ -78,13 +79,13 @@ function rewriteJs(js) {
   js = js.replace(/href:"\/"/g, 'href:"./index.html"');
   js = js.replace(/href:'\/'/g, "href:'./index.html'");
   // any remaining absolute asset refs
-  js = js.replace(/(["'`])\/_astro\//g, '$1./_astro/');
+  js = js.replace(/(["'`])\/(_astro|app)\//g, '$1./$2/');
   js = js.replace(/(["'`])\/favicon\.svg/g, '$1./favicon.svg');
   return js;
 }
 
 function rewriteCss(css) {
-  return css.replace(/url\(\/_astro\//g, 'url(');
+  return css.replace(/url\(\/(?:_astro|app)\//g, 'url(');
 }
 
 await fs.rm(OUT, { recursive: true, force: true });
@@ -111,7 +112,7 @@ const leftovers = [];
 for (const f of await walk(OUT)) {
   if (!/\.(html|js|css)$/.test(f)) continue;
   const txt = await fs.readFile(f, 'utf8');
-  const bad = txt.match(/(["'`(])\/(?:_astro|workflows|companies|users|credentials|favicon)\b/g);
+  const bad = txt.match(/(["'`(])\/(?:_astro|app|workflows|companies|users|credentials|favicon)\b/g);
   if (bad) leftovers.push(`${path.relative(OUT, f)}: ${[...new Set(bad)].join(' ')}`);
 }
 console.log(`wrote ${count} files to ${OUT}/ (${routes.size} pages)`);

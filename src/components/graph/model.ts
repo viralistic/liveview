@@ -117,7 +117,6 @@ export function buildGraph(workflows: Workflow[], companies: Company[], opts: Bu
   }
   const isolatedCount = shown.filter((w) => !(callDegree.get(w.id) ?? 0)).length;
   const kept = opts.showIsolated ? shown : shown.filter((w) => (callDegree.get(w.id) ?? 0) > 0);
-  const keptIds = new Set(kept.map((w) => w.id));
 
   const companyIds = companies.map((c) => c.id).filter((id) => kept.some((w) => w.companyId === id));
   const anchors = companyAnchors(companyIds, kept.length);

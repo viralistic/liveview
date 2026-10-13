@@ -35,8 +35,8 @@ export function forceCluster(): ClusterForce {
       let tx = s.x / s.n;
       let ty = s.y / s.n;
       if (a) {
-        tx = tx * 0.4 + a.x * 0.6;
-        ty = ty * 0.4 + a.y * 0.6;
+        tx = tx * 0.3 + a.x * 0.7;
+        ty = ty * 0.3 + a.y * 0.7;
       }
       n.vx = (n.vx ?? 0) + (tx - n.x) * k;
       n.vy = (n.vy ?? 0) + (ty - n.y) * k;

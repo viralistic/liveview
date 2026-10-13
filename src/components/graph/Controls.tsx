@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Check, ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react';
 import type { Company } from '../../data/types';
 import { Segmented } from '../ui/Segmented';
@@ -40,7 +39,8 @@ export function Controls({
   counts,
   heatmap,
   onHeatmap,
-  defaultOpen = true,
+  open,
+  onOpenChange,
 }: {
   settings: Settings;
   onChange: (patch: Partial<Settings>) => void;
@@ -48,9 +48,9 @@ export function Controls({
   counts: Map<string, number>;
   heatmap: boolean;
   onHeatmap: (v: boolean) => void;
-  defaultOpen?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
   const dirty =
     settings.query !== '' ||
     settings.hiddenCompanies.length > 0 ||
@@ -76,7 +76,7 @@ export function Controls({
   return (
     <div className={s.controls} data-open={open} role="region" aria-label="Graph controls">
       <div className={s.controlsHead}>
-        <button type="button" className={s.controlsTitle} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <button type="button" className={s.controlsTitle} onClick={() => onOpenChange(!open)} aria-expanded={open}>
           <SlidersHorizontal />
           Graph controls
         </button>
@@ -86,7 +86,7 @@ export function Controls({
               Reset
             </button>
           )}
-          <button type="button" className={s.iconBtn} onClick={() => setOpen((v) => !v)} aria-label={open ? 'Collapse controls' : 'Expand controls'}>
+          <button type="button" className={s.iconBtn} onClick={() => onOpenChange(!open)} aria-label={open ? 'Collapse controls' : 'Expand controls'}>
             <ChevronDown />
           </button>
         </div>

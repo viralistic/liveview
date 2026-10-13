@@ -16,7 +16,7 @@ export type Tier = 'tiny' | 'compact' | 'mini' | 'mini2' | 'full';
 export function tierOf(z: number): Tier {
   if (z < 0.11) return 'tiny';
   if (z < 0.22) return 'compact';
-  if (z < 0.36) return 'mini';
+  if (z < 0.45) return 'mini';
   if (z < 0.55) return 'mini2';
   return 'full';
 }

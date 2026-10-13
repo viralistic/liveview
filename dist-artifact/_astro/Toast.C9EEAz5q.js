@@ -1,1 +1,0 @@
-import{t as e}from"./jsx-runtime.BPMVGbCv.js";import{i as t,p as n}from"./session.BXl1hfBK.js";import{t as r}from"./check.B1Lku-ZU.js";import{t as i}from"./shell.module.Bgd-bMl3.js";var a=e();function o(){let e=n(t);return e?(0,a.jsxs)(`div`,{className:i.toast,role:`status`,children:[(0,a.jsx)(r,{}),e.text]},e.id):null}export{o as Toast};

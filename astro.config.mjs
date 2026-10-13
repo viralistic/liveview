@@ -11,7 +11,8 @@ export default defineConfig({
   output: 'static',
   devToolbar: { enabled: false },
   server: { host: true, port: 4321 },
-  build: { format: artifact ? 'file' : 'directory' },
+  // the artifact host reserves names starting with "_", so assets live in app/ there
+  build: { format: artifact ? 'file' : 'directory', assets: artifact ? 'app' : '_astro' },
   vite: {
     ssr: { noExternal: ['boring-avatars'] },
   },

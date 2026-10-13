@@ -55,6 +55,7 @@ export function Graph() {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [panning, setPanning] = useState(false);
+  const [controlsOpen, setControlsOpen] = useState(() => (typeof window === 'undefined' ? true : window.innerWidth >= 1100));
   const [view, setViewState] = useState<View>({ x: 0, y: 0, k: 1 });
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [, setFrame] = useState(0);
@@ -105,6 +106,8 @@ export function Graph() {
   const panelOpen = !!selectedWf;
   const panelOpenRef = useRef(panelOpen);
   panelOpenRef.current = panelOpen;
+  const controlsOpenRef = useRef(controlsOpen);
+  controlsOpenRef.current = controlsOpen;
 
   /* ---------------- viewport helpers ---------------- */
   const setView = useCallback((v: View) => {
@@ -143,7 +146,7 @@ export function Graph() {
       minY = Math.min(minY, n.y - n.r);
       maxY = Math.max(maxY, n.y + n.r);
     }
-    const pad = { l: 88, r: 88, t: 64, b: 110 };
+    const pad = { l: 88, r: 88 + (controlsOpenRef.current ? 268 : 0), t: 56, b: 110 };
     const availW = Math.max(120, w - (panelOpenRef.current ? PANEL_W : 0) - pad.l - pad.r);
     const availH = Math.max(120, h - pad.t - pad.b);
     const bw = Math.max(1, maxX - minX);
@@ -192,14 +195,14 @@ export function Graph() {
   const ensureSim = useCallback(() => {
     if (simRef.current) return simRef.current;
     const link = forceLink<GraphNode, GraphLink>([])
-      .distance((l) => (l.kind === 'source' ? settingsRef.current.linkDistance * 1.8 : settingsRef.current.linkDistance))
-      .strength((l) => (l.kind === 'source' ? 0.12 : 0.6) / Math.max(1, Math.min(l.source.degree, l.target.degree)));
-    const cluster = forceCluster().strength(0.09);
+      .distance((l) => (l.kind === 'source' ? settingsRef.current.linkDistance * 1.4 : settingsRef.current.linkDistance))
+      .strength((l) => (l.kind === 'source' ? 0.1 : 0.7) / Math.max(1, Math.min(l.source.degree, l.target.degree)));
+    const cluster = forceCluster().strength(0.22);
     const sim = forceSimulation<GraphNode, GraphLink>([])
       .alphaDecay(0.035)
       .velocityDecay(0.42)
       .force('link', link)
-      .force('charge', forceManyBody<GraphNode>().strength((d) => -settingsRef.current.repulsion * (d.kind === 'source' ? 2 : 1)).distanceMax(700))
+      .force('charge', forceManyBody<GraphNode>().strength((d) => -settingsRef.current.repulsion * (d.kind === 'source' ? 2 : 1)).distanceMax(420))
       .force('collide', forceCollide<GraphNode>().radius((d) => d.r + 6).strength(0.9).iterations(2))
       .force('center', forceCenter(0, 0).strength(0.04))
       .force('x', forceX<GraphNode>(0).strength(0.012))
@@ -284,7 +287,7 @@ export function Graph() {
     const applied = appliedForcesRef.current;
     if (applied.linkDistance === settings.linkDistance && applied.repulsion === settings.repulsion) return;
     appliedForcesRef.current = { linkDistance: settings.linkDistance, repulsion: settings.repulsion };
-    link.distance((l) => (l.kind === 'source' ? settings.linkDistance * 1.8 : settings.linkDistance));
+    link.distance((l) => (l.kind === 'source' ? settings.linkDistance * 1.4 : settings.linkDistance));
     (sim.force('charge') as ForceManyBody<GraphNode>).strength((d) => -settings.repulsion * (d.kind === 'source' ? 2 : 1));
     sim.alpha(0.5).restart();
   }, [settings.linkDistance, settings.repulsion]);
@@ -477,7 +480,6 @@ export function Graph() {
   const hasFailing = graph.nodes.some((n) => n.failing);
   const hasIssues = graph.nodes.some((n) => n.severity);
   const empty = graph.nodes.length === 0;
-  const defaultControlsOpen = typeof window === 'undefined' ? true : window.innerWidth >= 1100;
 
   return (
     <div
@@ -619,7 +621,8 @@ export function Graph() {
         counts={counts}
         heatmap={heatmap}
         onHeatmap={(v) => $heatmap.set(v)}
-        defaultOpen={defaultControlsOpen}
+        open={controlsOpen}
+        onOpenChange={setControlsOpen}
       />
 
       <Legend
