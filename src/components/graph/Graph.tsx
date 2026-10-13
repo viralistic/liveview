@@ -5,7 +5,7 @@
  * nodes. Force layout by d3-force, rendered as SVG in world coordinates.
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { useStore } from '@nanostores/react';
+import { useStore } from '../../stores/session';
 import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY, type ForceLink, type ForceManyBody, type Simulation } from 'd3-force';
 import { Clock, Globe, Maximize2, Minus, Plus, TriangleAlert, Waypoints, Zap, type LucideIcon } from 'lucide-react';
 import { $heatmap, $visibleCompanies, $visibleWorkflows, toast } from '../../stores/session';

@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-artifact/
 .astro/
 .DS_Store
 *.log

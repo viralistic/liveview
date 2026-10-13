@@ -160,18 +160,24 @@ export function OverviewPage() {
           <Card>
             <CardHeader title="Improvement opportunities" sub="What you would save by applying the suggested fixes." icon={<Lightbulb />} />
             <div className={s.savings} style={{ paddingTop: 14 }}>
-              <div className={s.saving}>
-                <b>{fmtCompact(savings.runs)}</b>
-                <span>fewer runs / week</span>
-              </div>
-              <div className={s.saving}>
-                <b>{fmtDuration(savings.minutes * 60_000)}</b>
-                <span>compute saved / week</span>
-              </div>
-              <div className={s.saving}>
-                <b>{fmtEuro(savings.euro)}</b>
-                <span>API spend / month</span>
-              </div>
+              {savings.runs > 0 && (
+                <div className={s.saving}>
+                  <b>{fmtCompact(savings.runs)}</b>
+                  <span>fewer runs / week</span>
+                </div>
+              )}
+              {savings.minutes > 0 && (
+                <div className={s.saving}>
+                  <b>{fmtDuration(savings.minutes * 60_000)}</b>
+                  <span>compute saved / week</span>
+                </div>
+              )}
+              {savings.euro > 0 && (
+                <div className={s.saving}>
+                  <b>{fmtEuro(savings.euro)}</b>
+                  <span>API spend / month</span>
+                </div>
+              )}
             </div>
             <CardBody flush>
               <div className={s.issueList}>

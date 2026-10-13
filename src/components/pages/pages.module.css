@@ -77,7 +77,7 @@
 .cursorDot { width: 10px; height: 10px; border-radius: 3px 3px 3px 0; transform: rotate(-45deg); flex: none; }
 
 /* ---------- savings ---------- */
-.savings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 18px 14px; }
+.savings { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; padding: 0 18px 14px; }
 .saving { background: var(--neutral-50); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
 .saving b { display: block; font-size: var(--fs-lg); font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); font-variant-numeric: tabular-nums; }
 .saving span { font-size: var(--fs-2xs); color: var(--text-muted); }

@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { Activity, CheckCircle2, Clock, Flame, KeyRound, LayoutGrid, Share2, ShieldCheck, TriangleAlert, UsersRound, Zap } from 'lucide-react';
+import { Activity, CheckCircle2, Clock, Flame, KeyRound, Lightbulb, LayoutGrid, Share2, ShieldCheck, TriangleAlert, UsersRound, Zap } from 'lucide-react';
 import { ACTIVITY, COMPANIES, CREDENTIALS, ROLE_LABEL, SEVERITY_RANK, WORKFLOWS } from '../../data';
 import { useSession } from '../../stores/session';
 import { openShare } from '../../stores/session';
 import { canManage, canSeeWorkflow, companyMembers, roleForCompany, roleForWorkflow, scopeLabel } from '../../lib/access';
 import { aggregateSeries, companyHealth, workflowHealth, worstSeverity } from '../../lib/health';
-import { fmtCompact, fmtInt, fmtPct, relTime } from '../../lib/format';
+import { fmtCompact, fmtDuration, fmtEuro, fmtInt, fmtPct, relTime } from '../../lib/format';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -43,6 +43,11 @@ export function CompanyPage({ companyId }: { companyId: string }) {
     { id: 'failed', label: 'Failed', color: '#ef4444', values: agg.failures },
   ];
   const activity = ACTIVITY.filter((a) => a.companyId === companyId);
+  const opportunities = issues.filter((i) => i.estSavings);
+  const savings = opportunities.reduce(
+    (acc, i) => ({ runs: acc.runs + (i.estSavings?.runsPerWeek ?? 0), minutes: acc.minutes + (i.estSavings?.minutesPerWeek ?? 0), euro: acc.euro + (i.estSavings?.euroPerMonth ?? 0) }),
+    { runs: 0, minutes: 0, euro: 0 },
+  );
 
   return (
     <>
@@ -121,6 +126,43 @@ export function CompanyPage({ companyId }: { companyId: string }) {
             <CardHeader title="Executions" sub="Last 7 days, succeeded vs failed." icon={<Activity />} action={<ChartLegend series={series} />} />
             <CardBody>
               <ExecutionsChart series={series} height={200} />
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader
+              title="How to improve"
+              sub={opportunities.length ? 'Applying the suggested fixes would save roughly this every week.' : 'No measurable waste found. Keep an eye on the minor tips in the findings.'}
+              icon={<Lightbulb />}
+            />
+            {opportunities.length > 0 && (
+              <div className={s.savings} style={{ paddingTop: 14 }}>
+                {savings.runs > 0 && (
+                  <div className={s.saving}>
+                    <b>{fmtCompact(savings.runs)}</b>
+                    <span>fewer runs / week</span>
+                  </div>
+                )}
+                {savings.minutes > 0 && (
+                  <div className={s.saving}>
+                    <b>{fmtDuration(savings.minutes * 60_000)}</b>
+                    <span>compute saved / week</span>
+                  </div>
+                )}
+                {savings.euro > 0 && (
+                  <div className={s.saving}>
+                    <b>{fmtEuro(savings.euro)}</b>
+                    <span>API spend / month</span>
+                  </div>
+                )}
+              </div>
+            )}
+            <CardBody flush>
+              <div className={s.issueList}>
+                {(opportunities.length ? opportunities : issues.filter((i) => i.severity !== 'critical')).slice(0, 4).map((i) => (
+                  <IssueRow key={i.id} issue={i} showCompany={false} />
+                ))}
+              </div>
             </CardBody>
           </Card>
 
