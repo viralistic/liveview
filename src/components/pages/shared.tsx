@@ -26,15 +26,16 @@ export function PageHeader({ eyebrow, title, lede, actions }: { eyebrow?: ReactN
   );
 }
 
-export function ViewSwitcher({ value }: { value: 'list' | 'graph' | 'canvas' }) {
+export function ViewSwitcher({ value }: { value: 'grid' | 'list' | 'graph' | 'canvas' }) {
   return (
     <Segmented
       pill
       value={value}
       items={[
+        { id: 'grid', label: 'Grid', icon: <LayoutGrid />, href: '/workflows/grid' },
         { id: 'list', label: 'List', icon: <List />, href: '/workflows' },
         { id: 'graph', label: 'Graph', icon: <Waypoints />, href: '/workflows/graph' },
-        { id: 'canvas', label: 'Canvas', icon: <LayoutGrid />, href: '/workflows/canvas' },
+        { id: 'canvas', label: 'Canvas', icon: <WorkflowIcon />, href: '/workflows/canvas' },
       ]}
     />
   );
@@ -79,7 +80,6 @@ export function KpiTile({ label, value, unit, delta, deltaLabel, deltaText, spar
 export function CompanyChip({ company }: { company: Company }) {
   return (
     <a href={`/companies/${company.slug}`} className={s.chip}>
-      <span className={s.chipDot} style={{ background: company.color }} />
       {company.shortName}
     </a>
   );

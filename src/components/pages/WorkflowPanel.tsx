@@ -1,57 +1,59 @@
-import { ArrowRight, ExternalLink, Focus, Share2, UsersRound, X, Workflow as WorkflowIcon } from 'lucide-react';
-import { COMPANIES, ROLE_LABEL, USERS, WORKFLOWS, callersOf, workflowById, nodeType } from '../../data';
-import { openShare, useSession } from '../../stores/session';
+import { useState } from 'react';
+import { AtSign, Box, ChevronDown, ChevronUp, ExternalLink, Focus, Share2, UsersRound, X } from 'lucide-react';
+import { COMPANIES, ROLE_LABEL, USERS, workflowById, productById } from '../../data';
+import { useSession, openShare, toast } from '../../stores/session';
+import { openAsk } from '../../stores/planner';
 import { roleForWorkflow, usersWithAccess, canManage } from '../../lib/access';
 import { workflowHealth } from '../../lib/health';
-import { fmtCompact, fmtDuration, fmtPct, relTime } from '../../lib/format';
-import { Avatar, AvatarGroup } from '../ui/Avatar';
+import { fmtCompact, fmtPct, relTime } from '../../lib/format';
+import { AvatarGroup } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Bars } from '../ui/Sparkline';
 import { HealthRing } from '../ui/HealthRing';
 import { NodeIcon } from '../ui/NodeIcon';
 import { SeverityIcon } from '../ui/SeverityIcon';
+import { SmartFix } from '../planner/SmartFix';
 import s from './WorkflowPanel.module.css';
 
+const seconds = (ms: number) => (ms < 1000 ? `${(ms / 1000).toFixed(1)}s` : ms < 60_000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.round(ms / 1000)}s`);
+
 /**
- * Shared detail panel for a workflow. Used by the canvas (right rail),
- * the graph view and the list view.
+ * Detail panel for one workflow. Minimal on purpose: what runs, what to fix,
+ * who can see it. Connections are visible on the canvas, so they are not repeated.
  */
 export function WorkflowPanel({ workflowId, onClose, onFocus, showOpenCanvas, showOpenGraph }: { workflowId: string; onClose?: () => void; onFocus?: (id: string) => void; showOpenCanvas?: boolean; showOpenGraph?: boolean }) {
-  const { user: me } = useSession();
-  const { grants } = useSession();
+  const { user: me, grants } = useSession();
+  const [open, setOpen] = useState<string | null>(null);
   const wf = workflowById(workflowId);
   if (!wf) return null;
   const company = COMPANIES.find((c) => c.id === wf.companyId)!;
   const role = roleForWorkflow(me.id, wf, grants);
   const people = usersWithAccess({ kind: 'workflow', workflowId: wf.id }, grants);
-  const owner = USERS.find((u) => u.id === wf.ownerId);
-  const updatedBy = USERS.find((u) => u.id === wf.updatedById);
-  const callers = callersOf(wf.id);
+  const product = wf.productId ? productById(wf.productId) : undefined;
   const health = workflowHealth(wf);
+  void onFocus;
+  void USERS;
 
   return (
     <div className={s.panel}>
       <div className={s.head}>
-        <NodeIcon type={wf.trigger.nodeTypeId} size={36} />
+        <NodeIcon type={wf.trigger.nodeTypeId} size={40} />
         <div className={s.headMeta}>
           <div className={s.title}>{wf.name}</div>
           <div className={s.sub}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 7, height: 7, borderRadius: 4, background: company.color, display: 'inline-block' }} />
-              {company.shortName}
-            </span>
-            <span>·</span>
-            <span>{wf.trigger.label}</span>
-            <span>·</span>
-            <span>v{wf.version}</span>
+            {company.shortName} · {wf.trigger.label}
           </div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+          <div className={s.pills}>
             <Badge tone={wf.active ? (wf.stats.lastStatus === 'error' ? 'danger' : 'success') : 'neutral'} dot>
               {wf.active ? (wf.stats.lastStatus === 'error' ? 'Failing' : wf.stats.lastStatus === 'running' ? 'Running' : 'Active') : 'Inactive'}
             </Badge>
-            {wf.shared && <Badge tone="brand">Shared service</Badge>}
-            {role && <Badge tone="outline">{ROLE_LABEL[role]}</Badge>}
+            {product && (
+              <a className={s.productTag} href={`/products/${product.slug}`} title={`Instance of the ${product.name} product`}>
+                <Box /> {product.name}
+              </a>
+            )}
+            {role && role !== 'admin' && <Badge tone="outline">{ROLE_LABEL[role]}</Badge>}
           </div>
         </div>
         <HealthRing score={health} size={40} />
@@ -63,33 +65,24 @@ export function WorkflowPanel({ workflowId, onClose, onFocus, showOpenCanvas, sh
       </div>
 
       <div className={s.body}>
-        <p className={s.desc}>{wf.description}</p>
-
         <div>
-          <div className={s.sectionTitle}>
-            <span>Last 7 days</span>
-            <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 450 }}>{fmtCompact(wf.stats.runs7d)} runs</span>
-          </div>
-          <Bars data={wf.stats.series7d} failures={wf.stats.failures7d} width={300} height={44} />
-          <div className={s.stats} style={{ marginTop: 10 }}>
+          <Bars data={wf.stats.series7d} failures={wf.stats.failures7d} width={320} height={40} color="var(--track-strong)" failColor="var(--accent)" />
+          <div className={s.stats} style={{ marginTop: 12 }}>
+            <div className={s.stat}>
+              <div className={s.statLabel}>Runs, 7 days</div>
+              <div className={s.statValue}>{fmtCompact(wf.stats.runs7d)}</div>
+            </div>
             <div className={s.stat}>
               <div className={s.statLabel}>Success</div>
-              <div className={s.statValue} style={{ color: wf.stats.successRate < 0.95 ? 'var(--danger-fg)' : undefined }}>{fmtPct(wf.stats.successRate)}</div>
+              <div className={s.statValue} style={{ color: wf.stats.successRate < 0.95 ? 'var(--accent)' : undefined }}>{fmtPct(wf.stats.successRate, 0)}</div>
             </div>
             <div className={s.stat}>
-              <div className={s.statLabel}>Failed 24h</div>
-              <div className={s.statValue}>{wf.stats.failed24h}</div>
-            </div>
-            <div className={s.stat}>
-              <div className={s.statLabel}>Avg duration</div>
-              <div className={s.statValue}>
-                {fmtDuration(wf.stats.avgDurationMs)}
-                <small>p95 {fmtDuration(wf.stats.p95DurationMs)}</small>
-              </div>
+              <div className={s.statLabel}>Average</div>
+              <div className={s.statValue}>{seconds(wf.stats.avgDurationMs)}</div>
             </div>
             <div className={s.stat}>
               <div className={s.statLabel}>Last run</div>
-              <div className={s.statValue} style={{ fontSize: 'var(--fs-sm)' }}>{relTime(wf.stats.lastRunAt)}</div>
+              <div className={s.statValue} style={{ fontSize: 'var(--fs-md)' }}>{relTime(wf.stats.lastRunAt)}</div>
             </div>
           </div>
         </div>
@@ -97,89 +90,51 @@ export function WorkflowPanel({ workflowId, onClose, onFocus, showOpenCanvas, sh
         {wf.issues.length > 0 && (
           <div>
             <div className={s.sectionTitle}>
-              <span>What to improve · {wf.issues.length}</span>
+              <span>Fix now</span>
             </div>
             {wf.issues.map((i) => (
-              <div key={i.id} className={s.issue}>
-                <SeverityIcon severity={i.severity} size={13} filled />
-                <div style={{ minWidth: 0 }}>
-                  <div className={s.issueTitle}>{i.title}</div>
-                  <div className={s.issueDetail}>{i.detail}</div>
-                  <div className={s.issueFix}>
-                    <b>Fix:</b> {i.suggestion}
+              <div key={i.id} className={s.fix}>
+                <div className={s.fixHead}>
+                  <SeverityIcon severity={i.severity} size={13} filled />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div className={s.fixAction}>{i.action}</div>
+                    <div className={s.fixImpact}>{i.impact}</div>
                   </div>
-                  <div className={s.issueImpact}>
-                    {i.impact}
-                    {i.nodeId ? ` · node “${wf.nodes.find((n) => n.id === i.nodeId)?.name}”` : ''} · detected {relTime(i.detectedAt)}
+                </div>
+                {open === i.id && (
+                  <div className={s.fixDetails}>
+                    {i.detail}
+                    <br />
+                    <br />
+                    <b>How:</b> {i.suggestion}
                   </div>
+                )}
+                <div className={s.fixRow}>
+                  <SmartFix issue={i} compact />
+                  <button type="button" className={s.linkBtn} onClick={() => setOpen(open === i.id ? null : i.id)}>
+                    {open === i.id ? 'Less' : 'Why'} {open === i.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                  </button>
+                  <button type="button" className={s.linkBtn} style={{ marginLeft: 'auto' }} onClick={() => toast(`Opened “${wf.name}” in n8n (demo)`)}>
+                    Open in n8n
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {(wf.calls.length > 0 || callers.length > 0) && (
-          <div>
-            <div className={s.sectionTitle}>
-              <span>Connections</span>
-            </div>
-            <div className={s.links}>
-              {callers.map((c) => (
-                <button key={c.id} type="button" className={s.linkRow} onClick={() => onFocus?.(c.id)}>
-                  <WorkflowIcon />
-                  <span>
-                    Triggered by <b>{c.name}</b>
-                  </span>
-                  <small>{COMPANIES.find((x) => x.id === c.companyId)?.shortName}</small>
-                </button>
-              ))}
-              {wf.calls.map((id) => {
-                const t = WORKFLOWS.find((w) => w.id === id)!;
-                return (
-                  <button key={id} type="button" className={s.linkRow} onClick={() => onFocus?.(id)}>
-                    <ArrowRight />
-                    <span>
-                      Triggers <b>{t.name}</b>
-                    </span>
-                    <small>{COMPANIES.find((x) => x.id === t.companyId)?.shortName}</small>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         <div>
           <div className={s.sectionTitle}>
-            <span>Nodes · {wf.nodes.length}</span>
-          </div>
-          <div className={s.nodes}>
-            {wf.nodes.map((n) => (
-              <NodeIcon key={n.id} type={n.type} size={26} title={`${n.name} · ${nodeType(n.type).label}`} />
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <div className={s.sectionTitle}>
-            <span>Access · {people.length}</span>
+            <span>People</span>
             {canManage(role) && (
-              <button type="button" style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 500, color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: 4 }} onClick={() => openShare({ kind: 'workflow', workflowId: wf.id })}>
+              <button type="button" className={s.linkBtn} style={{ textTransform: 'none', letterSpacing: 0 }} onClick={() => openShare({ kind: 'workflow', workflowId: wf.id })}>
                 <Share2 size={12} /> Manage
               </button>
             )}
           </div>
-          <div className={s.access}>
-            <AvatarGroup users={people.map((p) => p.user)} size={26} max={6} />
-            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
-              {people.filter((p) => p.role === 'admin' || p.role === 'editor').length} can edit · {people.filter((p) => p.role === 'commenter' || p.role === 'viewer').length} can view
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
-            {owner && <Avatar user={owner} size={18} />}
-            <span>
-              Owner {owner?.name} · updated {relTime(wf.updatedAt)} by {updatedBy?.name.split(' ')[0]}
-            </span>
+          <div className={s.people}>
+            <AvatarGroup users={people.map((p) => p.user)} size={28} max={6} />
+            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>{people.length} can see this</span>
           </div>
         </div>
       </div>
@@ -192,11 +147,14 @@ export function WorkflowPanel({ workflowId, onClose, onFocus, showOpenCanvas, sh
         )}
         {showOpenGraph && (
           <Button href={`/workflows/graph?focus=${wf.id}`} variant="secondary" size="sm">
-            <UsersRound /> Show in graph
+            <UsersRound /> Graph
           </Button>
         )}
         <Button variant="secondary" size="sm" href={`https://n8n.viralistic.nl/workflow/${wf.id}`} target="_blank" rel="noreferrer">
           <ExternalLink /> Open in n8n
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => openAsk({ workflowId: wf.id })} title="Tag someone about this workflow">
+          <AtSign /> Ask
         </Button>
       </div>
     </div>

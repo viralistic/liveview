@@ -43,7 +43,7 @@ export function Toolbar({ tool, onTool, heat, onHeat, connections, onConnections
       <span className={s.sep} />
       <Tooltip label={heat ? 'Hide health heatmap' : 'Show health heatmap'}>
         <button type="button" className={s.tbBtn} data-on={heat} onClick={onHeat} aria-pressed={heat} aria-label="Health heatmap">
-          <Flame style={heat ? { color: 'var(--heat-critical)' } : undefined} />
+          <Flame />
         </button>
       </Tooltip>
       <Tooltip label={connections ? 'Hide workflow connections' : 'Show workflow connections'}>

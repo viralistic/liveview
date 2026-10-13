@@ -1,0 +1,8 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import { WorkflowsGridPage } from '../../components/pages/WorkflowsGridPage';
+---
+
+<AppShell title="Workflows" active="workflows" activeView="grid" crumbs={[{ label: 'Workflows' }, { label: 'Grid' }]} shareScope={{ kind: 'org' }}>
+  <WorkflowsGridPage client:load />
+</AppShell>

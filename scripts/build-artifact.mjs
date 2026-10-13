@@ -59,7 +59,7 @@ function rewriteHtml(html, depth, isRoot) {
       .replace(/<\/head>/i, '')
       .replace(/<body[^>]*>/i, '')
       .replace(/<\/body>/i, '');
-    html = html.replace(/<title>[^<]*<\/title>/, '<title>LiveView for n8n</title>');
+    html = html.replace(/<title>[^<]*<\/title>/, '<title>Viralistic LiveView</title>');
     html = base + '\n' + html.trim() + '\n';
   } else {
     html = html.replace(/<head>/i, '<head>' + base);

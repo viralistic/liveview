@@ -1,0 +1,43 @@
+/* "+ New workflow" pill and its liquid-glass popover (shared by canvas + graph) */
+.wrap { position: relative; display: inline-flex; flex-direction: column; align-items: flex-end; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px 0 10px; border-radius: 999px;
+  background: var(--accent); color: var(--accent-fg); font-size: 12.5px; font-weight: var(--fw-medium); letter-spacing: var(--tracking-tight);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 6px 18px rgba(234, 75, 113, 0.32); white-space: nowrap;
+  transition: background var(--dur-fast), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast);
+}
+.btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.btn:active { transform: none; }
+.btn[data-open='true'] { background: var(--primary); color: var(--primary-fg); box-shadow: var(--shadow-md); }
+.btn svg { width: 15px; height: 15px; }
+
+.pop {
+  position: absolute; right: 0; bottom: calc(100% + 10px); width: 300px; z-index: 30;
+  border-radius: 16px; padding: 14px 14px 12px; text-align: left; cursor: default;
+  background: var(--glass-bg, var(--surface));
+  -webkit-backdrop-filter: blur(24px) saturate(1.5); backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid var(--glass-border, var(--border));
+  box-shadow: 0 0 0 1px var(--glass-edge, rgba(0, 0, 0, 0.06)), var(--shadow-lg), inset 0 1px 0 var(--glass-hi, rgba(255, 255, 255, 0.6));
+  animation: pop-in var(--dur) var(--ease-out); user-select: text; -webkit-user-select: text;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.title { font-size: 13px; font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); color: var(--text); }
+.close { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; color: var(--text-muted); }
+.close:hover { background: var(--surface-active); color: var(--text); }
+.close svg { width: 13px; height: 13px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.label { font-size: 10.5px; font-weight: var(--fw-medium); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-subtle); display: flex; align-items: center; justify-content: space-between; }
+.input, .select {
+  width: 100%; height: 32px; border: 1px solid var(--border-strong); border-radius: 9px; padding: 0 10px; font-size: 12.5px;
+  background: var(--surface); color: var(--text); outline: none; transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.input::placeholder { color: var(--text-subtle); }
+.input:focus, .select:focus { border-color: var(--text-subtle); box-shadow: 0 0 0 3px var(--surface-active); }
+.select { appearance: none; -webkit-appearance: none; padding-right: 28px; cursor: pointer; }
+.selectWrap { position: relative; }
+.selectWrap svg { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); width: 13px; height: 13px; color: var(--text-subtle); pointer-events: none; }
+.selectWrap[data-product='true'] .select { border-color: var(--product-border); color: var(--product-text); background: var(--product-soft); }
+.selectWrap[data-product='true'] svg { color: var(--product-text); }
+.hint { font-size: 11px; color: var(--text-muted); line-height: 1.45; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.foot { display: flex; justify-content: flex-end; gap: 6px; margin-top: 2px; }

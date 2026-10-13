@@ -53,7 +53,7 @@ export function Breadcrumb({ ctrl, layout, selection, visibleIds, companyById, w
         <>
           <ChevronRight className={s.crumbSep} />
           <button type="button" className={s.crumb} data-current={level === 1} onClick={() => onFitSection(company.id)}>
-            <span className={s.crumbMark} style={{ background: company.color }}>
+            <span className={s.crumbMark} aria-hidden="true">
               {company.initials}
             </span>
             {company.shortName}

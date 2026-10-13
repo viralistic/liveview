@@ -5,7 +5,6 @@ import { ArrowUpRight } from 'lucide-react';
 import type { Issue, Workflow } from '../../data/types';
 import { SEVERITY_LABEL } from '../../data/types';
 import { NODE_SIZE, nodeWorldPos, type WorldLayout } from '../../lib/layout';
-import { SEVERITY_COLOR } from '../../lib/health';
 import { relTime } from '../../lib/format';
 import { SeverityIcon } from '../ui/SeverityIcon';
 import { $markersVisible } from './viewport';
@@ -39,7 +38,7 @@ export function Markers({ layout, workflows, onOpenPanel }: { layout: WorldLayou
                 <div className={s.issueHead}>
                   <SeverityIcon severity={issue.severity} size={12} filled />
                   <div style={{ minWidth: 0 }}>
-                    <div className={s.issueSev} style={{ color: SEVERITY_COLOR[issue.severity] }}>
+                    <div className={s.issueSev} data-sev={issue.severity}>
                       {SEVERITY_LABEL[issue.severity]}
                     </div>
                     <div className={s.issueTitle}>{issue.title}</div>

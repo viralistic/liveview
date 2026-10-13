@@ -10,7 +10,7 @@ import { COMMENTS } from '../../data/comments';
 import { COMPANIES } from '../../data/companies';
 import { USERS } from '../../data/users';
 import { WORKFLOWS } from '../../data/workflows';
-import type { Scope } from '../../data/types';
+import type { Scope, Workflow } from '../../data/types';
 import { buildLayout, decodeViewport, encodeViewport, nodeCenter } from '../../lib/layout';
 import { canManage, canSeeCompany, canSeeWorkflow, companyMembers, highestRole, roleForCompany, usersWithAccess } from '../../lib/access';
 import { $currentUser, $grants, $heatmap, $visibleCompanies, $visibleWorkflows, openShare, toast } from '../../stores/session';
@@ -26,22 +26,22 @@ import { Cursors } from './Cursors';
 import { Breadcrumb, deriveContext } from './Breadcrumb';
 import { Toolbar } from './Toolbar';
 import { Minimap } from './Minimap';
+import { NewWorkflowButton, draftWorkflow } from './NewWorkflow';
 import { buildScript, type CursorScript } from './cursorPaths';
 import { $tier, $viewport, ViewportController } from './viewport';
 import type { Selection, Tool } from './types';
 import s from './canvas.module.css';
 
-const RAIL_W = 360;
+/** The floating rail is 380px wide and inset 16px; the camera centres fits in what is left of the canvas. */
+const RAIL_W = 380 + 16;
 const SECTION_HEADER_WORLD = 160;
 
-const workflowById = new Map(WORKFLOWS.map((w) => [w.id, w] as const));
 const companyById = new Map(COMPANIES.map((c) => [c.id, c] as const));
 const userById = new Map(USERS.map((u) => [u.id, u] as const));
-const workflowsByCompany = new Map(COMPANIES.map((c) => [c.id, WORKFLOWS.filter((w) => w.companyId === c.id)] as const));
 
 const isTyping = (e: Event) => {
   const t = e.target as HTMLElement | null;
-  return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+  return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
 };
 
 export function Canvas() {
@@ -59,14 +59,24 @@ export function Canvas() {
   const gridRef = useRef<HTMLDivElement>(null);
   const ctrl = useMemo(() => new ViewportController(), []);
 
-  const visibleIds = useMemo(() => new Set(visibleWorkflows.map((w) => w.id)), [visibleWorkflows]);
+  /* drafts created with "+ New workflow" live only in this view */
+  const [drafts, setDrafts] = useState<Workflow[]>([]);
+  const allWorkflows = useMemo(() => (drafts.length ? [...WORKFLOWS, ...drafts] : WORKFLOWS), [drafts]);
+  const workflowById = useMemo(() => new Map(allWorkflows.map((w) => [w.id, w] as const)), [allWorkflows]);
+  const workflowsByCompany = useMemo(() => new Map(COMPANIES.map((c) => [c.id, allWorkflows.filter((w) => w.companyId === c.id)] as const)), [allWorkflows]);
+
+  const visibleIds = useMemo(() => {
+    const ids = new Set(visibleWorkflows.map((w) => w.id));
+    for (const d of drafts) ids.add(d.id);
+    return ids;
+  }, [visibleWorkflows, drafts]);
   // keyed on the company ids so grant edits that do not change the set keep the camera where it is
   const companyKey = visibleCompanies.map((c) => c.id).join(',');
   const layout = useMemo(() => {
     if (!companyKey) return null;
     const ids = new Set(companyKey.split(','));
-    return buildLayout(COMPANIES.filter((c) => ids.has(c.id)), WORKFLOWS.filter((w) => ids.has(w.companyId)));
-  }, [companyKey]);
+    return buildLayout(COMPANIES.filter((c) => ids.has(c.id)), allWorkflows.filter((w) => ids.has(w.companyId)));
+  }, [companyKey, allWorkflows]);
 
   const [selection, setSelectionState] = useState<Selection>(null);
   const [tool, setTool] = useState<Tool>('move');
@@ -140,6 +150,7 @@ export function Canvas() {
   }, [ctrl]);
 
   const initRef = useRef(false);
+  const pendingDraftRef = useRef<string | null>(null);
   useLayoutEffect(() => {
     if (!layout) return;
     if (!initRef.current) {
@@ -158,6 +169,14 @@ export function Canvas() {
         if (v) ctrl.set(v);
         else fitAll(false);
       }
+      return;
+    }
+    // a draft was just added: fly to it, keep everything else as it is
+    const pending = pendingDraftRef.current;
+    if (pending && layout.cards[pending]) {
+      pendingDraftRef.current = null;
+      select(null);
+      fitWorkflow(pending, true);
       return;
     }
     // access changed (user switch): drop stale selection, refit
@@ -353,6 +372,7 @@ export function Canvas() {
     const label = t.closest('[data-section-label]');
     if (label) return select({ kind: 'section', companyId: label.getAttribute('data-section-label')! });
     const card = t.closest('[data-wf]');
+    if (card && card.hasAttribute('data-draft')) return toast('Draft workflow: build it in n8n first (demo)');
     if (card && !card.hasAttribute('data-locked')) return select({ kind: 'workflow', id: card.getAttribute('data-wf')! });
     select(null);
   };
@@ -387,7 +407,7 @@ export function Canvas() {
       }
     }
     return out;
-  }, [layout, visibleIds, grants, me.id]);
+  }, [layout, visibleIds, grants, me.id, workflowById]);
 
   const comments = useMemo<CanvasComment[]>(() => [...COMMENTS.filter((c) => visibleIds.has(c.workflowId)), ...extraComments], [visibleIds, extraComments]);
 
@@ -415,6 +435,7 @@ export function Canvas() {
   const myRole = highestRole(me.id, grants);
   const viewOnly = myRole === 'viewer' || myRole === 'commenter';
   const followUser = followId ? userById.get(followId) : undefined;
+  const contextCompany = layout ? deriveContext(ctrl, layout, selection, visibleIds).companyId : null;
 
   return (
     <div
@@ -498,7 +519,18 @@ export function Canvas() {
             </Button>
           </div>
           <div className={s.bottomRight} data-ui>
-            <Minimap ctrl={ctrl} layout={layout} visibleIds={visibleIds} workflowById={workflowById} />
+            {!viewOnly && (
+              <NewWorkflowButton
+                companies={visibleCompanies}
+                defaultCompanyId={contextCompany}
+                onCreate={(d) => {
+                  const wf = draftWorkflow(d, me.id);
+                  pendingDraftRef.current = wf.id;
+                  setDrafts((prev) => [...prev, wf]);
+                }}
+              />
+            )}
+            <Minimap ctrl={ctrl} layout={layout} visibleIds={visibleIds} workflowById={workflowById} heat={heat} />
           </div>
           <Toolbar
             tool={tool}
@@ -544,7 +576,7 @@ export function Canvas() {
       )}
 
       {railOpen && selection?.kind === 'workflow' && (
-        <aside className={s.rail} data-rail data-ui>
+        <aside className={s.rail} data-rail data-ui aria-label="Workflow details">
           <WorkflowPanel workflowId={selection.id} onClose={() => select(null)} onFocus={zoomToWorkflow} showOpenGraph />
         </aside>
       )}

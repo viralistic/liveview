@@ -1,14 +1,14 @@
-/** Small overview map; click to jump. */
+/** Small overview map; click to jump. Neutral, except the heat hue for failing flows and purple for product instances. */
 import { useStore } from '@nanostores/react';
 import type { Workflow } from '../../data/types';
-import { companyById } from '../../data/companies';
 import type { WorldLayout } from '../../lib/layout';
+import { SEVERITY_HEX } from '../../lib/health';
 import { $viewport, type ViewportController } from './viewport';
 import s from './canvas.module.css';
 
 const M = 400; // world margin
 
-export function Minimap({ ctrl, layout, visibleIds, workflowById }: { ctrl: ViewportController; layout: WorldLayout; visibleIds: ReadonlySet<string>; workflowById: ReadonlyMap<string, Workflow> }) {
+export function Minimap({ ctrl, layout, visibleIds, workflowById, heat }: { ctrl: ViewportController; layout: WorldLayout; visibleIds: ReadonlySet<string>; workflowById: ReadonlyMap<string, Workflow>; heat: boolean }) {
   const vp = useStore($viewport);
   const b = layout.bounds;
   const vis = { x: vp.x, y: vp.y, w: ctrl.effW / vp.z, h: ctrl.h / vp.z };
@@ -33,8 +33,11 @@ export function Minimap({ ctrl, layout, visibleIds, workflowById }: { ctrl: View
           const wf = workflowById.get(c.workflowId);
           const locked = !visibleIds.has(c.workflowId);
           const failing = !!wf && wf.active && wf.stats.lastStatus === 'error';
-          const color = failing ? '#ef4444' : locked || !wf?.active ? 'currentColor' : companyById(c.companyId).color;
-          return <rect key={c.workflowId} x={c.x} y={c.y} width={c.w} height={c.h} rx={40} fill={color} fillOpacity={failing ? 0.6 : locked ? 0.08 : !wf?.active ? 0.14 : 0.35} />;
+          const product = !!wf?.productId && !locked;
+          const hot = heat && failing && !locked;
+          const fill = hot ? SEVERITY_HEX.critical : product ? 'var(--product)' : 'currentColor';
+          const opacity = hot ? 0.6 : locked ? 0.08 : !wf?.active ? 0.14 : product ? 0.5 : 0.3;
+          return <rect key={c.workflowId} x={c.x} y={c.y} width={c.w} height={c.h} rx={40} style={{ fill, fillOpacity: opacity }} />;
         })}
         <rect className={s.mmView} x={vis.x} y={vis.y} width={vis.w} height={vis.h} strokeWidth={24} rx={20} />
       </svg>

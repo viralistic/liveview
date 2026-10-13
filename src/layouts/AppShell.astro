@@ -2,11 +2,12 @@
 import '@fontsource-variable/geist';
 import '@fontsource-variable/geist-mono';
 import '../styles/global.css';
-import { Sidebar, type NavKey } from '../components/shell/Sidebar';
+import { Sidebar, type NavKey, type WorkflowView } from '../components/shell/Sidebar';
 import { Topbar, type Crumb, type TopbarContext } from '../components/shell/Topbar';
 import { ShareDialog } from '../components/share/ShareDialog';
 import { Toast } from '../components/shell/Toast';
 import { VideoModal } from '../components/shell/VideoModal';
+import { AskComposer } from '../components/planner/AskComposer';
 import type { Scope } from '../data/types';
 
 interface Props {
@@ -14,13 +15,14 @@ interface Props {
   description?: string;
   active: NavKey;
   activeCompanyId?: string;
+  activeView?: WorkflowView;
   crumbs: Crumb[];
   /** full-bleed pages (canvas, graph) manage their own scrolling */
   bleed?: boolean;
   shareScope?: Scope;
   context?: TopbarContext;
 }
-const { title, description = 'LiveView: a multiplayer workflow manager for n8n.', active, activeCompanyId, crumbs, bleed = false, shareScope, context } = Astro.props;
+const { title, description = 'Viralistic LiveView: a multiplayer workflow manager for n8n.', active, activeCompanyId, activeView, crumbs, bleed = false, shareScope, context } = Astro.props;
 ---
 
 <!doctype html>
@@ -28,7 +30,7 @@ const { title, description = 'LiveView: a multiplayer workflow manager for n8n.'
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title} · LiveView</title>
+    <title>{title} · Viralistic LiveView</title>
     <meta name="description" content={description} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="color-scheme" content="light dark" />
@@ -48,7 +50,7 @@ const { title, description = 'LiveView: a multiplayer workflow manager for n8n.'
   </head>
   <body>
     <div class="app" data-collapsed="false">
-      <Sidebar client:load active={active} activeCompanyId={activeCompanyId} />
+      <Sidebar client:load active={active} activeCompanyId={activeCompanyId} activeView={activeView} />
       <div class="main">
         <Topbar client:load crumbs={crumbs} shareScope={shareScope} context={context} />
         {bleed ? (
@@ -60,6 +62,7 @@ const { title, description = 'LiveView: a multiplayer workflow manager for n8n.'
     </div>
     <ShareDialog client:load />
     <VideoModal client:load />
+    <AskComposer client:load />
     <Toast client:load />
   </body>
 </html>

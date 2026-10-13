@@ -1,0 +1,8 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import { ProductsGallery } from '../../components/products/ProductsGallery';
+---
+
+<AppShell title="Products" description="Reusable automations. Update one, every project gets it." active="products" crumbs={[{ label: 'Products' }]} shareScope={{ kind: 'org' }}>
+  <ProductsGallery client:load />
+</AppShell>

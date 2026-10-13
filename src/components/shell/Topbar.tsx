@@ -73,17 +73,17 @@ export function Topbar({ crumbs, shareScope, context }: { crumbs: Crumb[]; share
         </button>
         <span className={s.divider} />
         <div className={s.presence} aria-label={`${others.length} people online`}>
-          {others.slice(0, 4).map((u) => (
+          {others.slice(0, 3).map((u) => (
             <Tooltip key={u.id} label={`${u.name} · ${u.title}`} side="bottom">
               <span className={s.presenceAv}>
-                <Avatar user={u} size={28} ring />
+                <Avatar user={u} size={20} />
               </span>
             </Tooltip>
           ))}
           {others.length > 0 && (
             <span className={s.liveCount}>
-              <span className="pulse" style={{ width: 6, height: 6, borderRadius: 3, background: 'var(--green-500)', display: 'inline-block' }} />
-              {others.length} live
+              <span className="pulse" style={{ width: 5, height: 5, borderRadius: 3, background: 'var(--health-full)', display: 'inline-block' }} />
+              {others.length}
             </span>
           )}
         </div>

@@ -1,0 +1,8 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+import { PlannerPage } from '../components/planner/PlannerPage';
+---
+
+<AppShell title="Planner" active="planner" crumbs={[{ label: 'Planner' }]} shareScope={{ kind: 'org' }}>
+  <PlannerPage client:load />
+</AppShell>

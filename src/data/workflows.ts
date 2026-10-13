@@ -92,6 +92,7 @@ interface WfSpec {
   stats: StatSpec;
   issues?: Omit<Issue, 'id' | 'workflowId'>[];
   shared?: boolean;
+  productId?: string;
 }
 
 function wf(spec: WfSpec): Workflow {
@@ -116,11 +117,13 @@ function wf(spec: WfSpec): Workflow {
     stats: makeStats(spec.id, spec.stats, active),
     issues: (spec.issues ?? []).map((i, idx) => ({ ...i, id: `${spec.id}-i${idx + 1}`, workflowId: spec.id })),
     shared: spec.shared,
+    productId: spec.productId,
   };
 }
 
 const issue = (
   severity: Severity,
+  action: string,
   title: string,
   detail: string,
   suggestion: string,
@@ -128,7 +131,7 @@ const issue = (
   nodeId?: string,
   detectedAt = hoursAgo(8),
   estSavings?: Issue['estSavings'],
-): Omit<Issue, 'id' | 'workflowId'> => ({ severity, title, detail, suggestion, impact, nodeId, detectedAt, estSavings });
+): Omit<Issue, 'id' | 'workflowId'> => ({ severity, action, title, detail, suggestion, impact, nodeId, detectedAt, estSavings });
 
 /* ------------------------------------------------------------------ */
 /* Viralistic Digital Agency Amsterdam                                 */
@@ -137,6 +140,7 @@ const issue = (
 const viralistic: Workflow[] = [
   wf({
     id: 'vir-lead-intake',
+    productId: 'lead-intake',
     name: 'Website lead intake',
     companyId: 'viralistic',
     description: 'Takes form submissions from viralistic.nl, creates the HubSpot contact, notifies sales and sends an auto-reply.',
@@ -169,6 +173,7 @@ const viralistic: Workflow[] = [
     issues: [
       issue(
         'minor',
+        'Add an error branch to the HubSpot node',
         'HubSpot node has no error branch',
         'If HubSpot rate-limits (HTTP 429) the execution fails and the lead is lost silently.',
         'Enable “Continue (using error output)” on Create contact and route errors to the Slack alert workflow.',
@@ -210,6 +215,7 @@ const viralistic: Workflow[] = [
     issues: [
       issue(
         'inefficient',
+        'Cache enrichment lookups for 24 hours',
         'Same domain enriched up to 11× per day',
         '61% of calls look up a domain that was already enriched in the last 24 hours. Both lookups are paid API calls.',
         'Cache lookups in a Data Table keyed by domain with a 24h TTL and short-circuit with an If node.',
@@ -222,6 +228,7 @@ const viralistic: Workflow[] = [
   }),
   wf({
     id: 'vir-invoicing',
+    productId: 'invoice-generator',
     name: 'Monthly invoicing → Moneybird',
     companyId: 'viralistic',
     description: 'On the 1st of the month: aggregate approved timesheets per client, create Moneybird invoices and email them.',
@@ -282,6 +289,7 @@ const viralistic: Workflow[] = [
     issues: [
       issue(
         'minor',
+        'Rename the two Edit Fields nodes',
         'Two nodes still have default names',
         '“Edit Fields” and “Edit Fields1” make executions hard to read for the client.',
         'Rename to what they do: “Build prompt” and “Shape Notion properties”.',
@@ -293,6 +301,7 @@ const viralistic: Workflow[] = [
   }),
   wf({
     id: 'vir-client-reporting',
+    productId: 'client-report',
     name: 'Weekly client reporting',
     companyId: 'viralistic',
     description: 'Every Monday: pull KPIs per client, loop over clients and render + send a PDF report via the render service.',
@@ -351,6 +360,7 @@ const viralistic: Workflow[] = [
   }),
   wf({
     id: 'vir-slack-alerts',
+    productId: 'error-alerts',
     name: 'Error alerts → Slack',
     companyId: 'viralistic',
     description: 'Global error handler. Any failing execution in the instance posts a formatted alert to #n8n-alerts.',
@@ -374,6 +384,7 @@ const viralistic: Workflow[] = [
   }),
   wf({
     id: 'vir-social-scheduler',
+    productId: 'social-scheduler',
     name: 'Social post scheduler',
     companyId: 'viralistic',
     description: 'Reads the Airtable content calendar and posts to LinkedIn and Telegram at the planned time.',
@@ -402,6 +413,7 @@ const viralistic: Workflow[] = [
     issues: [
       issue(
         'minor',
+        'Re-activate or archive the scheduler',
         'Paused for 3 weeks with 14 posts due',
         'The content calendar has 14 posts past their planned time while the scheduler is inactive.',
         'Re-activate, or archive the workflow and clear the calendar so the team stops relying on it.',
@@ -420,6 +432,7 @@ const viralistic: Workflow[] = [
 const volkswagen: Workflow[] = [
   wf({
     id: 'vw-dealer-lead-routing',
+    productId: 'lead-intake',
     name: 'Dealer lead routing',
     companyId: 'volkswagen',
     description: 'Leads from volkswagen.nl are normalized, routed to the right regional dealer in HubSpot and confirmed to the customer by SMS.',
@@ -454,6 +467,7 @@ const volkswagen: Workflow[] = [
     issues: [
       issue(
         'critical',
+        'Reconnect the HubSpot credential',
         'HubSpot credential expired, every lead is failing',
         'The OAuth token for “HubSpot · Volkswagen” expired at 06:12. Both deal nodes return 401 and 100% of executions fail at the Switch step.',
         'Re-authenticate the credential in Credentials, then retry the 164 failed executions from the executions list.',
@@ -522,6 +536,7 @@ const volkswagen: Workflow[] = [
     issues: [
       issue(
         'inefficient',
+        'Query dealer calendars in parallel',
         'Webhook answers after 6.8s on average',
         'The response waits for three sequential Google Calendar calls (one per dealer calendar). The widget shows a spinner and 4% of visitors drop off.',
         'Query the calendars in parallel with a Split Out → Merge pattern, or cache availability for 60s.',
@@ -563,6 +578,7 @@ const volkswagen: Workflow[] = [
     issues: [
       issue(
         'inefficient',
+        'Replace the 5-minute poll with a trigger',
         '97% of runs find nothing to sync',
         'Of 2,016 runs last week, 1,955 returned zero changed rows. Each still queries the DMS and HubSpot.',
         'Replace the 5-minute poll with a DMS database trigger (or a 30-minute schedule plus a webhook for urgent changes).',
@@ -604,6 +620,7 @@ const volkswagen: Workflow[] = [
     issues: [
       issue(
         'minor',
+        'Turn on retry for the SMS node',
         'Twilio node has no retry',
         'Occasional 429s from Twilio drop a reminder for that owner. 3 reminders were skipped last week.',
         'Turn on “Retry on fail” (3 tries, 2s wait) in the SMS node settings.',
@@ -742,6 +759,7 @@ const transmissies: Workflow[] = [
     issues: [
       issue(
         'inefficient',
+        'Switch stock updates to the batch endpoint',
         '2,400 SKUs updated one request at a time',
         'The loop issues one WooCommerce API call per SKU. A full run takes 41 minutes and overlaps with the next scheduled run.',
         'Use the WooCommerce batch endpoint (100 products per call) via HTTP Request, and only send SKUs whose stock actually changed.',
@@ -754,6 +772,7 @@ const transmissies: Workflow[] = [
   }),
   wf({
     id: 'tr-quote-requests',
+    productId: 'lead-intake',
     name: 'Quote requests (gearbox finder)',
     companyId: 'transmissies',
     description: 'A visitor describes their car and problem; the model classifies it, Airtable finds matching gearboxes and sales gets a quote draft.',
@@ -788,6 +807,7 @@ const transmissies: Workflow[] = [
     issues: [
       issue(
         'critical',
+        'Respond to the webhook immediately',
         'Webhook times out: response after 31s',
         'The form waits for the full chain (OpenAI + Airtable + enrichment) before responding. Cloudflare cuts the request at 30s, so the visitor sees an error although the quote is created.',
         'Add a Respond to Webhook node right after “Clean input” (immediate 202), then continue the chain asynchronously.',
@@ -797,6 +817,7 @@ const transmissies: Workflow[] = [
       ),
       issue(
         'minor',
+        'Pin the answer language in the prompt',
         'OpenAI prompt has no language instruction',
         'Dutch inputs occasionally get English classifications, which breaks the Airtable match.',
         'Add “Answer in the language of the input” to the system prompt and pin the output schema.',
@@ -808,6 +829,7 @@ const transmissies: Workflow[] = [
   }),
   wf({
     id: 'tr-review-requests',
+    productId: 'review-requests',
     name: 'Review requests after delivery',
     companyId: 'transmissies',
     description: 'Three days after delivery, asks the customer for a Trustpilot review.',
@@ -835,6 +857,7 @@ const transmissies: Workflow[] = [
     issues: [
       issue(
         'minor',
+        'Move the 3-day wait into a Data Table',
         '340 executions parked in a Wait node',
         'Each daily run keeps executions waiting for 3 days. That is fine functionally, but it inflates the execution list and memory use.',
         'Store “ask on” dates in a Data Table and let the daily run pick up whatever is due instead of waiting inside the execution.',
@@ -938,6 +961,7 @@ const hoasted: Workflow[] = [
   }),
   wf({
     id: 'ho-ssl-expiry',
+    productId: 'ssl-expiry',
     name: 'SSL expiry checker',
     companyId: 'hoasted',
     description: 'Daily: checks the certificate of every hosted domain and warns customers 14 days before expiry.',
@@ -967,6 +991,7 @@ const hoasted: Workflow[] = [
     issues: [
       issue(
         'inefficient',
+        'Check certificates in batches',
         '1,900 sequential HTTPS checks take 42 minutes',
         'Domains are checked one by one inside the loop. The run regularly collides with the 04:00 backup window.',
         'Set the HTTP Request node to batch mode (50 items, 0ms interval) and drop the Loop node, or split the domain list over 4 parallel sub-workflows.',
@@ -979,6 +1004,7 @@ const hoasted: Workflow[] = [
   }),
   wf({
     id: 'ho-support-triage',
+    productId: 'support-triage',
     name: 'Support ticket triage (AI)',
     companyId: 'hoasted',
     description: 'New support emails are classified by an agent, turned into Notion tickets and routed by priority.',
@@ -1008,6 +1034,7 @@ const hoasted: Workflow[] = [
     issues: [
       issue(
         'minor',
+        'Cap the triage agent at 6 iterations',
         'Agent has no max iterations',
         'One ticket last week looped 23 tool calls before finishing, costing 11× a normal run.',
         'Set “Max iterations” to 6 on the Triage agent and add a fallback to “P2 · manual review”.',
@@ -1019,6 +1046,7 @@ const hoasted: Workflow[] = [
   }),
   wf({
     id: 'ho-invoice-dunning',
+    productId: 'invoice-dunning',
     name: 'Invoice dunning',
     companyId: 'hoasted',
     description: 'Overdue invoices get a friendly reminder, then a firmer one by SMS after a week.',

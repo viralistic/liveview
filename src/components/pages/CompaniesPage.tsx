@@ -1,0 +1,70 @@
+import { ArrowUpRight, Check, Focus } from 'lucide-react';
+import { useSession } from '../../stores/session';
+import { aggregateSeries, companyHealth } from '../../lib/health';
+import { companyMembers } from '../../lib/access';
+import { fmtCompact, fmtInt } from '../../lib/format';
+import { AvatarGroup } from '../ui/Avatar';
+import { Button } from '../ui/Button';
+import { Card, CardBody } from '../ui/Card';
+import { HealthRing } from '../ui/HealthRing';
+import { PageHeader } from './shared';
+import s from './pages.module.css';
+
+/** The companies you manage. Quiet unless something is breaking. */
+export function CompaniesPage() {
+  const { grants, visibleWorkflows: wfs, visibleCompanies: companies } = useSession();
+  return (
+    <>
+      <PageHeader title="Companies" lede={<>{companies.length} you manage. Open one for its own dashboard, or jump straight to its section on the canvas.</>} />
+      <Card>
+        <CardBody flush>
+          <div className={s.companyRows}>
+            {companies.map((c) => {
+              const cWfs = wfs.filter((w) => w.companyId === c.id);
+              const cCritical = cWfs.flatMap((w) => w.issues).filter((i) => i.severity === 'critical').length;
+              const score = companyHealth(c.id);
+              const members = companyMembers(c.id, grants);
+              const agg = aggregateSeries(cWfs);
+              const runs = agg.runs.reduce((a, b) => a + b, 0);
+              const failed = agg.failures.reduce((a, b) => a + b, 0);
+              return (
+                <div key={c.id} className={s.companyRow} style={{ padding: '18px 20px' }}>
+                  <HealthRing score={cCritical ? Math.min(score, 69) : score} size={32} stroke={3} showLabel={false} checkWhenHealthy={cCritical === 0} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <a href={`/companies/${c.slug}`} className={s.companyRowName} style={{ fontSize: 'var(--fs-lg)' }}>
+                      {c.name}
+                    </a>
+                    <div className={s.actionSub}>
+                      {cWfs.length} workflows · {fmtCompact(runs)} runs this week{failed ? ` · ${fmtInt(failed)} failed` : ''}
+                      {cCritical > 0 && (
+                        <>
+                          {' · '}
+                          <span className={s.companyCritical}>{cCritical} breaking</span>
+                        </>
+                      )}
+                      {cCritical === 0 && score >= 90 && (
+                        <>
+                          {' · '}
+                          <span style={{ color: 'var(--health-full)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                            <Check size={12} /> all good
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <AvatarGroup users={members.map((m) => m.user)} size={24} max={4} />
+                  <Button size="sm" variant="secondary" href={`/workflows/canvas?focus=${c.id}`}>
+                    <Focus /> Canvas
+                  </Button>
+                  <Button size="sm" variant="ghost" href={`/companies/${c.slug}`} aria-label={`Open ${c.shortName}`} icon>
+                    <ArrowUpRight />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </CardBody>
+      </Card>
+    </>
+  );
+}

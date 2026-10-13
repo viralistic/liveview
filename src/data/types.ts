@@ -48,6 +48,8 @@ export interface Issue {
   workflowId: string;
   nodeId?: string;
   severity: Severity;
+  /** short imperative: what to do right now, e.g. "Reconnect the HubSpot credential" */
+  action: string;
   title: string;
   detail: string;
   suggestion: string;
@@ -116,6 +118,40 @@ export interface Workflow {
   stats: WorkflowStats;
   issues: Issue[];
   shared?: boolean; // shared service used by several companies
+  /** this workflow is an instance of a reusable product (purple everywhere) */
+  productId?: string;
+}
+
+/* ------------------------------------------------------------------ */
+/* Products: reusable automations, like symbols in Webflow.             */
+/* One source of truth; every instance can be updated from it.         */
+/* ------------------------------------------------------------------ */
+export type ProductCategoryId = 'financial' | 'marketing' | 'hrm' | 'common';
+export interface ProductCategory {
+  id: ProductCategoryId;
+  label: string;
+  description: string;
+}
+export interface ProductInstance {
+  workflowId: string;
+  companyId: string;
+  version: number; // version of the product this instance runs
+}
+export interface Product {
+  id: string;
+  slug: string;
+  name: string;
+  category: ProductCategoryId;
+  tagline: string;
+  description: string;
+  version: number;
+  updatedAt: string;
+  updatedById: string;
+  trigger: Trigger;
+  nodes: WfNode[];
+  connections: WfConnection[];
+  instances: ProductInstance[];
+  tags: string[];
 }
 
 export interface User {

@@ -8,7 +8,6 @@ import { SEVERITY_HEX, companyHealth, worstSeverity } from '../../lib/health';
 import { openShare } from '../../stores/session';
 import { AvatarGroup } from '../ui/Avatar';
 import { Button } from '../ui/Button';
-import { CompanyMark } from '../ui/CompanyMark';
 import { WorkflowCard } from './WorkflowCard';
 import type { Tier } from './viewport';
 import s from './canvas.module.css';
@@ -29,9 +28,11 @@ export interface SectionProps {
   showSources: boolean;
 }
 
-const HEAT_RX = CARD_W * 0.5;
-const HEAT_RY = CARD_W * 0.27;
-const HEAT_OPACITY = { critical: 0.42, inefficient: 0.3, minor: 0.18 } as const;
+/* The hue is huge on purpose: 2.5 card widths across, soft falloff, low peak so text stays readable. */
+const HEAT_RX = CARD_W * 1.25;
+const HEAT_RY = CARD_W * 0.68;
+/** Breaking is red, wasteful is orange. Minor findings get no hue (they show as a quiet marker when zoomed in). */
+const HEAT_OPACITY: Partial<Record<keyof typeof SEVERITY_HEX, number>> = { critical: 0.28, inefficient: 0.22 };
 
 export const Section = memo(function Section({ section, company, workflows, visibleIds, members, ownerById, canManage, askName, tier, selected, selectedWf, heat, showSources }: SectionProps) {
   const visibleCount = workflows.filter((w) => visibleIds.has(w.id)).length;
@@ -39,7 +40,9 @@ export const Section = memo(function Section({ section, company, workflows, visi
   return (
     <div className={s.section} data-section={company.id} data-selected={selected} data-tier={tier} style={{ left: section.x, top: section.y, width: section.w, height: section.h }}>
       <div className={[s.sectionLabel, s.csBL].join(' ')} data-section-label={company.id}>
-        <CompanyMark company={company} size={20} />
+        <span className={s.sectionMark} aria-hidden="true">
+          {company.initials}
+        </span>
         <span className={s.sectionName}>{company.shortName}</span>
         <span className={s.sectionMeta}>
           {visibleCount < workflows.length ? `${visibleCount} of ${workflows.length}` : workflows.length} workflows · health <b>{health}</b>
@@ -56,20 +59,23 @@ export const Section = memo(function Section({ section, company, workflows, visi
           <Share2 /> Share
         </Button>
       </div>
-      {section.cards.map((card) => {
-        const wf = workflows.find((w) => w.id === card.workflowId);
-        if (!wf || !visibleIds.has(wf.id)) return null;
-        const worst = worstSeverity(wf);
-        if (!worst) return null;
-        return (
-          <div
-            key={`heat-${wf.id}`}
-            className={s.heat}
-            data-on={heat}
-            style={{ ['--heat' as string]: SEVERITY_HEX[worst], ['--heat-o' as string]: HEAT_OPACITY[worst], left: card.x + card.w / 2 - HEAT_RX - section.x, top: card.y + card.h / 2 - HEAT_RY - section.y, width: HEAT_RX * 2, height: HEAT_RY * 2 }}
-          />
-        );
-      })}
+      <div className={s.heatLayer} aria-hidden="true">
+        {section.cards.map((card) => {
+          const wf = workflows.find((w) => w.id === card.workflowId);
+          if (!wf || !visibleIds.has(wf.id)) return null;
+          const worst = worstSeverity(wf);
+          const o = worst ? HEAT_OPACITY[worst] : undefined;
+          if (!worst || !o) return null;
+          return (
+            <div
+              key={`heat-${wf.id}`}
+              className={s.heat}
+              data-on={heat}
+              style={{ ['--heat' as string]: SEVERITY_HEX[worst], ['--heat-o' as string]: o, left: card.x + card.w / 2 - HEAT_RX - section.x, top: card.y + card.h / 2 - HEAT_RY - section.y, width: HEAT_RX * 2, height: HEAT_RY * 2 }}
+            />
+          );
+        })}
+      </div>
       {showSources && (
         <svg className={s.sectionSvg} aria-hidden="true">
           {section.sources.flatMap((src) =>

@@ -36,6 +36,7 @@ export function healthTone(score: number): 'good' | 'warn' | 'bad' {
   return score >= 85 ? 'good' : score >= 60 ? 'warn' : 'bad';
 }
 
+/** Canvas-only hues. Dashboard pages use neutral markers (see SeverityIcon). */
 export const SEVERITY_COLOR: Record<Severity, string> = {
   critical: 'var(--heat-critical)',
   inefficient: 'var(--heat-inefficient)',
@@ -45,8 +46,17 @@ export const SEVERITY_COLOR: Record<Severity, string> = {
 export const SEVERITY_HEX: Record<Severity, string> = {
   critical: '#ef4444',
   inefficient: '#f97316',
-  minor: '#facc15',
+  minor: '#a3a3a3',
 };
+
+/** Pink when low (blended out), fluorescent when full. */
+export function healthColor(score: number): string {
+  if (score >= 90) return 'var(--health-full)';
+  if (score >= 70) return 'var(--health-mid)';
+  return 'var(--health-low)';
+}
+/** Short human label for a severity, without colour. */
+export const SEVERITY_WORD: Record<Severity, string> = { critical: 'Breaking', inefficient: 'Wasteful', minor: 'Tip' };
 
 export function aggregateSeries(wfs: Workflow[]): { runs: number[]; failures: number[] } {
   const runs = new Array(28).fill(0);

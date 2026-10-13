@@ -1,0 +1,14 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import { PRODUCTS } from '../../data/products';
+import { ProductDetail } from '../../components/products/ProductDetail';
+
+export function getStaticPaths() {
+  return PRODUCTS.map((p) => ({ params: { slug: p.slug }, props: { product: p } }));
+}
+const { product } = Astro.props;
+---
+
+<AppShell title={product.name} description={product.tagline} active="products" crumbs={[{ label: 'Products', href: '/products' }, { label: product.name }]} shareScope={{ kind: 'org' }}>
+  <ProductDetail client:load productId={product.id} />
+</AppShell>

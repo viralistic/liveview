@@ -50,12 +50,7 @@ export function WorkflowsListPage() {
   return (
     <>
       <PageHeader
-        title="All workflows"
-        lede={
-          <>
-            {wfs.length} workflows across {companies.length} {companies.length === 1 ? 'company' : 'companies'}. The list is the fastest way to find one; the graph shows how they call each other; the canvas is where you work.
-          </>
-        }
+        title="Workflows"
         actions={<ViewSwitcher value="list" />}
       />
 

@@ -14,3 +14,4 @@ export { Sparkline, Bars } from './Sparkline';
 export { HealthRing } from './HealthRing';
 export { SeverityIcon } from './SeverityIcon';
 export { ICONS, iconByName } from './icons';
+export { ProductTag, ProductDot } from './ProductTag';

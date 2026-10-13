@@ -1,239 +1,245 @@
 import { useMemo } from 'react';
-import { Activity, ArrowDownRight, ArrowUpRight, CheckCircle2, Clock, Flame, Gauge, LayoutGrid, Lightbulb, Sparkles, TriangleAlert, Zap } from 'lucide-react';
-import { COMPANIES, SEVERITY_RANK, type Issue } from '../../data';
+import { Activity, ArrowRight, Check, Clock, Lightbulb, LayoutGrid, Focus } from 'lucide-react';
+import { COMPANIES, SEVERITY_RANK, WORKFLOWS, type Issue } from '../../data';
 import { useSession } from '../../stores/session';
-import { aggregateSeries, orgHealth } from '../../lib/health';
+import { aggregateSeries, companyHealth, orgHealth } from '../../lib/health';
+import { companyMembers } from '../../lib/access';
 import { fmtCompact, fmtDuration, fmtEuro, fmtInt, fmtPct, greeting, NOW } from '../../lib/format';
 import { Button } from '../ui/Button';
-import { Card, CardBody, CardHeader, CardFooter } from '../ui/Card';
-import { Badge } from '../ui/Badge';
+import { Card, CardBody, CardFooter, CardHeader } from '../ui/Card';
 import { HealthRing } from '../ui/HealthRing';
-import { DotMatrix } from './charts/DotMatrix';
-import { DotSphere } from './charts/DotSphere';
-import { ActivityFeed, CompanyCard, IssueRow, KpiTile, OnlineNow, PageHeader } from './shared';
+import { AvatarGroup } from '../ui/Avatar';
+import { SeverityIcon } from '../ui/SeverityIcon';
+import { ExportMenu } from './ExportMenu';
+import { ActivityFeed } from './shared';
 import s from './pages.module.css';
 
+/** The overview says as little as possible: who you are, what you manage, what needs you. */
 export function OverviewPage() {
-  const { user: me } = useSession();
-  const { visibleWorkflows: wfs } = useSession();
-  const { visibleCompanies: companies } = useSession();
-
+  const { user: me, grants, visibleWorkflows: wfs, visibleCompanies: companies } = useSession();
   const agg = useMemo(() => aggregateSeries(wfs), [wfs]);
   const runs24h = agg.runs.slice(-4).reduce((a, b) => a + b, 0);
-  const runsPrev24h = agg.runs.slice(-8, -4).reduce((a, b) => a + b, 0);
   const failed24h = agg.failures.slice(-4).reduce((a, b) => a + b, 0);
-  const failedPrev = agg.failures.slice(-8, -4).reduce((a, b) => a + b, 0);
   const runs7d = agg.runs.reduce((a, b) => a + b, 0);
-  const prev7d = Math.round(runs7d * 0.94);
   const failed7d = agg.failures.reduce((a, b) => a + b, 0);
   const successRate = runs7d ? 1 - failed7d / runs7d : 1;
   const active = wfs.filter((w) => w.active);
-  const avgDuration = active.length ? active.reduce((a, w) => a + w.stats.avgDurationMs * Math.max(1, w.stats.runs7d), 0) / Math.max(1, active.reduce((a, w) => a + Math.max(1, w.stats.runs7d), 0)) : 0;
   const health = orgHealth();
   const issues = useMemo(() => wfs.flatMap((w) => w.issues).sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity] || b.detectedAt.localeCompare(a.detectedAt)), [wfs]);
   const critical = issues.filter((i) => i.severity === 'critical');
   const opportunities = issues.filter((i) => i.estSavings);
+  const main = opportunities[0];
   const savings = opportunities.reduce(
     (acc, i) => ({ runs: acc.runs + (i.estSavings?.runsPerWeek ?? 0), minutes: acc.minutes + (i.estSavings?.minutesPerWeek ?? 0), euro: acc.euro + (i.estSavings?.euroPerMonth ?? 0) }),
     { runs: 0, minutes: 0, euro: 0 },
   );
 
-  const series = companies.map((c) => ({ id: c.id, label: c.shortName, color: c.color, values: aggregateSeries(wfs.filter((w) => w.companyId === c.id)).runs }));
-  const pct = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0);
-  const failingCompanies = COMPANIES.filter((c) => critical.some((i) => wfs.find((w) => w.id === i.workflowId)?.companyId === c.id));
-
   return (
     <>
-      <PageHeader
-        eyebrow={
-          <>
-            <span>{NOW.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-            <span>·</span>
-            <span>{wfs.length} workflows across {companies.length} {companies.length === 1 ? 'company' : 'companies'}</span>
-          </>
-        }
-        title={
-          <>
+      <div className={s.header} style={{ alignItems: 'flex-start', marginBottom: 8 }}>
+        <div style={{ minWidth: 0 }}>
+          <div className={s.eyebrow}>{NOW.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+          <h1 className={s.greeting}>
             {greeting()}, {me.name.split(' ')[0]}
-          </>
-        }
-        lede={
-          critical.length ? (
-            <>
-              <b>{critical.length} breaking {critical.length === 1 ? 'issue' : 'issues'}</b> at {failingCompanies.map((c) => c.shortName).join(' and ')} need you first. Everything else is running: {fmtInt(runs24h)} executions in the last 24 hours at {fmtPct(successRate)} success.
-            </>
-          ) : (
-            <>
-              All clear. {fmtInt(runs24h)} executions in the last 24 hours at {fmtPct(successRate)} success, {opportunities.length} ideas to make things cheaper.
-            </>
-          )
-        }
-        actions={
-          <>
-            <Button href="/workflows/graph" variant="secondary">
-              <Activity /> Graph
-            </Button>
-            <Button href="/workflows/canvas" variant="primary">
-              <LayoutGrid /> Open canvas
-            </Button>
-          </>
-        }
-      />
-
-      <div className={s.kpis}>
-        <KpiTile label="Executions · 24h" value={fmtCompact(runs24h)} delta={pct(runs24h, runsPrev24h)} spark={agg.runs.slice(-16)} icon={<Zap />} />
-        <KpiTile label="Success rate · 7d" value={fmtPct(successRate)} delta={-(failed7d / Math.max(1, runs7d)) * 100 * 0.4} icon={<CheckCircle2 />} />
-        <KpiTile label="Failed · 24h" value={fmtInt(failed24h)} delta={failed24h - failedPrev} deltaText={`${failed24h - failedPrev > 0 ? '+' : ''}${fmtInt(failed24h - failedPrev)}`} tone="bad" spark={agg.failures.slice(-16)} icon={<TriangleAlert />} />
-        <KpiTile label="Avg duration" value={fmtDuration(avgDuration)} delta={-3.2} tone="bad" icon={<Clock />} />
-        <KpiTile label="Active workflows" value={String(active.length)} unit={`of ${wfs.length}`} sub={`${wfs.length - active.length} inactive`} icon={<Activity />} />
-        <div className={s.kpi}>
-          <div className={s.kpiLabel}>
-            <Gauge /> Instance health
+          </h1>
+          <div className={s.managing}>
+            <span>You are managing</span>
+            <a href="/workflows/canvas" className={s.pillLink}>
+              {wfs.length} workflows <ArrowRight />
+            </a>
+            <span>across</span>
+            <a href="/companies" className={s.pillLink}>
+              {companies.length} {companies.length === 1 ? 'company' : 'companies'} <ArrowRight />
+            </a>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <HealthRing score={health} size={44} stroke={4} />
-            <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-              {issues.length} findings
-              <br />
-              {critical.length} breaking
-            </div>
+        </div>
+        <div className={s.actions}>
+          <Button href="/workflows/canvas" variant="primary">
+            <LayoutGrid /> Open canvas
+          </Button>
+          <Button href="/workflows/graph" variant="secondary">
+            <Activity /> Graph
+          </Button>
+          <ExportMenu scope={{ kind: 'org' }} />
+        </div>
+      </div>
+
+      <div className={s.kpisMin}>
+        <div className={s.kpiMin}>
+          <div className={s.kpiLabel}>Runs today</div>
+          <div className={s.kpiMinValue}>{fmtCompact(runs24h)}</div>
+          <div className={s.hoverCard}>
+            <b>{fmtInt(runs7d)}</b> runs in 7 days · <b>{fmtInt(active.reduce((a, w) => a + w.stats.runs24h, 0))}</b> today
+          </div>
+        </div>
+        <div className={s.kpiMin}>
+          <div className={s.kpiLabel}>Success</div>
+          <div className={s.kpiMinValue}>{fmtPct(successRate, 1)}</div>
+          <div className={s.hoverCard}>
+            <b>{fmtInt(failed7d)}</b> failed of <b>{fmtInt(runs7d)}</b> runs this week
+          </div>
+        </div>
+        <div className={s.kpiMin}>
+          <div className={s.kpiLabel}>Failed today</div>
+          <div className={s.kpiMinValue} style={{ color: failed24h ? 'var(--accent)' : undefined }}>{fmtInt(failed24h)}</div>
+          <div className={s.hoverCard}>
+            {critical.length ? (
+              <>
+                Mostly <b>{WORKFLOWS.find((w) => w.id === critical[0]!.workflowId)?.name}</b>
+              </>
+            ) : (
+              <>Nothing is breaking</>
+            )}
+          </div>
+        </div>
+        <div className={s.kpiMin}>
+          <div className={s.kpiLabel}>Workflows</div>
+          <div className={s.kpiMinValue}>{wfs.length}</div>
+          <div className={s.hoverCard}>
+            <b>{active.length}</b> active · <b>{wfs.length - active.length}</b> inactive · <b>{wfs.filter((w) => w.productId).length}</b> from products
+          </div>
+        </div>
+        <div className={s.kpiMin}>
+          <div className={s.kpiLabel}>Health</div>
+          <div className={s.kpiMinValue}>
+            <HealthRing score={health} size={34} stroke={3.5} showLabel={false} />
+            {health}
+          </div>
+          <div className={s.hoverCard}>
+            <b>{issues.length}</b> findings · <b>{critical.length}</b> breaking · avg run {fmtDuration(active.reduce((a, w) => a + w.stats.avgDurationMs, 0) / Math.max(1, active.length))}
           </div>
         </div>
       </div>
 
       <div className={s.grid2}>
         <div className={s.stack}>
-          <section className={s.hero} aria-label="Executions this week">
-            <div className={s.heroHead}>
-              <div style={{ minWidth: 0 }}>
-                <div className={s.heroEyebrow}>
-                  <span style={{ width: 6, height: 6, borderRadius: 3, background: 'var(--accent)', display: 'inline-block' }} />
-                  Last 7 days · {companies.length} {companies.length === 1 ? 'project' : 'projects'}
-                </div>
-                <h2 className={s.heroTitle}>
-                  {fmtCompact(runs7d)} runs,
-                  <br />
-                  <span>{fmtPct(successRate)} succeeded</span>
-                </h2>
-                <div className={s.heroMeta}>
-                  <span className={s.heroPill}>
-                    {runs7d >= prev7d ? <ArrowUpRight /> : <ArrowDownRight />}
-                    {prev7d ? `${runs7d >= prev7d ? '+' : ''}${(((runs7d - prev7d) / prev7d) * 100).toFixed(1)}%` : '–'} vs previous week
-                  </span>
-                  {failed7d > 0 && (
-                    <span className={[s.heroPill, s.heroPillPink].join(' ')}>
-                      <TriangleAlert /> {fmtInt(failed7d)} failed
-                    </span>
-                  )}
-                  <span>Each dot is a slice of a 6-hour bucket. Pink dots are failures, rings are now.</span>
-                </div>
-              </div>
-              <div className={s.heroArt}>
-                <DotSphere size={168} />
-              </div>
-            </div>
-            <div style={{ marginTop: 6 }}>
-              <DotMatrix values={agg.runs} failures={agg.failures} breakdown={series} rows={9} height={176} tone="dark" />
-            </div>
-            <div className={s.heroFoot}>
-              {series.map((sr) => (
-                <span key={sr.id} className={s.heroStat}>
-                  <i style={{ background: sr.color }} />
-                  {sr.label}
-                  <b>{fmtCompact(sr.values.reduce((a, b) => a + b, 0))}</b>
-                </span>
-              ))}
-            </div>
-          </section>
-
           <Card>
-            <CardHeader title="Companies" sub="Everything you have access to. Pin the ones you work on most." icon={<LayoutGrid />} />
-            <CardBody>
-              <div className={s.companies}>
-                {companies.map((c) => (
-                  <CompanyCard key={c.id} company={c} />
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader title="Recent activity" icon={<Clock />} />
+            <CardHeader title="Needs attention" action={critical.length ? <span className={s.companyCritical}>{critical.length} breaking</span> : undefined} />
             <CardBody flush>
-              <ActivityFeed limit={7} />
+              {issues.length === 0 ? (
+                <div className={s.calm}>
+                  <Check /> Nothing needs you right now.
+                </div>
+              ) : (
+                issues.slice(0, 5).map((i) => <ActionRow key={i.id} issue={i} />)
+              )}
             </CardBody>
-          </Card>
-        </div>
-
-        <div className={s.stack}>
-          <Card>
-            <CardHeader
-              title="Needs attention"
-              sub="Sorted by severity. The canvas shows the same findings as a heatmap."
-              icon={<Flame />}
-              action={
-                <span style={{ display: 'flex', gap: 4 }}>
-                  <Badge tone="danger">{critical.length} breaking</Badge>
-                  <Badge tone="warning">{issues.filter((i) => i.severity === 'inefficient').length} inefficient</Badge>
-                </span>
-              }
-            />
-            <CardBody flush>
-              <div className={s.issueList}>
-                {issues.slice(0, 7).map((i) => (
-                  <IssueRow key={i.id} issue={i} />
-                ))}
-              </div>
-            </CardBody>
-            {issues.length > 7 && (
+            {issues.length > 5 && (
               <CardFooter>
-                <span>{issues.length - 7} more findings</span>
-                <a href="/workflows/canvas" style={{ color: 'var(--text)', fontWeight: 500 }}>
-                  See all on the canvas
+                <span>{issues.length - 5} more</span>
+                <a href="/improvements" style={{ color: 'var(--text)', fontWeight: 500 }}>
+                  See all
                 </a>
               </CardFooter>
             )}
           </Card>
 
           <Card>
-            <CardHeader title="Improvement opportunities" sub="What you would save by applying the suggested fixes." icon={<Lightbulb />} />
-            <div className={s.savings} style={{ paddingTop: 14 }}>
-              {savings.runs > 0 && (
-                <div className={s.saving}>
-                  <b>{fmtCompact(savings.runs)}</b>
-                  <span>fewer runs / week</span>
-                </div>
-              )}
-              {savings.minutes > 0 && (
-                <div className={s.saving}>
-                  <b>{fmtDuration(savings.minutes * 60_000)}</b>
-                  <span>compute saved / week</span>
-                </div>
-              )}
-              {savings.euro > 0 && (
-                <div className={s.saving}>
-                  <b>{fmtEuro(savings.euro)}</b>
-                  <span>API spend / month</span>
-                </div>
-              )}
-            </div>
+            <CardHeader title="Recent activity" icon={<Clock />} />
             <CardBody flush>
-              <div className={s.issueList}>
-                {opportunities.slice(0, 4).map((i: Issue) => (
-                  <IssueRow key={i.id} issue={i} />
-                ))}
+              <ActivityFeed limit={6} />
+            </CardBody>
+          </Card>
+        </div>
+
+        <div className={s.stack}>
+          <Card>
+            <CardHeader title="Companies" />
+            <CardBody flush>
+              <div className={s.companyRows}>
+                {companies.map((c) => {
+                  const cWfs = wfs.filter((w) => w.companyId === c.id);
+                  const cCritical = cWfs.flatMap((w) => w.issues).filter((i) => i.severity === 'critical').length;
+                  const score = companyHealth(c.id);
+                  const members = companyMembers(c.id, grants);
+                  const cAgg = aggregateSeries(cWfs);
+                  const runs = cAgg.runs.reduce((a, b) => a + b, 0);
+                  const failed = cAgg.failures.reduce((a, b) => a + b, 0);
+                  return (
+                    <div key={c.id} className={s.companyRow}>
+                      <a href={`/companies/${c.slug}`} className={s.companyRowName}>
+                        {c.name}
+                      </a>
+                      {cCritical > 0 && <span className={s.companyCritical}>{cCritical} breaking</span>}
+                      <HealthRing score={cCritical ? Math.min(score, 69) : score} size={28} stroke={3} showLabel={false} checkWhenHealthy={cCritical === 0} />
+                      <div className={s.hoverCard}>
+                        <b>{cWfs.length}</b> workflows · <b>{fmtCompact(runs)}</b> runs · <b>{fmtInt(failed)}</b> failed · <b>{members.length}</b> people · health <b>{score}</b>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardBody>
           </Card>
 
           <Card>
-            <CardHeader title="Online now" sub="Everyone currently in LiveView. Their cursor colour follows them onto the canvas." icon={<Sparkles />} />
-            <CardBody flush style={{ paddingBottom: 6 }}>
-              <OnlineNow />
+            <CardHeader title="Improve" icon={<Lightbulb />} action={<a href="/improvements" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>More</a>} />
+            <CardBody>
+              {main ? (
+                <>
+                  <div className={s.actionTitle}>{main.action}</div>
+                  <div className={s.actionSub}>
+                    {COMPANIES.find((c) => c.id === WORKFLOWS.find((w) => w.id === main.workflowId)?.companyId)?.shortName} · {WORKFLOWS.find((w) => w.id === main.workflowId)?.name}
+                  </div>
+                  <div style={{ display: 'flex', gap: 18, marginTop: 14 }}>
+                    {savings.runs > 0 && (
+                      <div>
+                        <div className={s.savingBig}>{fmtCompact(savings.runs)}</div>
+                        <div className={s.kpiLabel}>fewer runs / week</div>
+                      </div>
+                    )}
+                    {savings.minutes > 0 && (
+                      <div>
+                        <div className={s.savingBig}>{fmtDuration(savings.minutes * 60_000)}</div>
+                        <div className={s.kpiLabel}>saved / week</div>
+                      </div>
+                    )}
+                    {savings.euro > 0 && (
+                      <div>
+                        <div className={s.savingBig}>{fmtEuro(savings.euro)}</div>
+                        <div className={s.kpiLabel}>/ month</div>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 14 }}>
+                    <Button size="sm" variant="secondary" href={`/workflows/canvas?focus=${main.workflowId}`}>
+                      <Focus /> Open
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className={s.muted}>Nothing to improve right now.</div>
+              )}
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader title="People" />
+            <CardBody>
+              <AvatarGroup users={companies.flatMap((c) => companyMembers(c.id, grants).map((m) => m.user)).filter((u, i, arr) => arr.findIndex((x) => x.id === u.id) === i)} size={30} max={8} />
             </CardBody>
           </Card>
         </div>
       </div>
     </>
+  );
+}
+
+function ActionRow({ issue }: { issue: Issue }) {
+  const wf = WORKFLOWS.find((w) => w.id === issue.workflowId)!;
+  const company = COMPANIES.find((c) => c.id === wf.companyId)!;
+  return (
+    <div className={s.actionRow}>
+      <SeverityIcon severity={issue.severity} size={13} filled />
+      <div className={s.actionMeta}>
+        <div className={s.actionTitle}>{issue.action}</div>
+        <div className={s.actionSub}>
+          {company.shortName} · {wf.name} · {issue.impact}
+        </div>
+      </div>
+      <Button size="sm" variant={issue.severity === 'critical' ? 'primary' : 'secondary'} href={`/workflows/canvas?focus=${wf.id}`}>
+        {issue.severity === 'critical' ? 'Fix' : 'Open'}
+      </Button>
+    </div>
   );
 }

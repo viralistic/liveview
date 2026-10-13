@@ -13,6 +13,15 @@ export function daysAgo(d: number): string {
 
 export function relTime(iso: string, now: Date = NOW): string {
   const diff = now.getTime() - new Date(iso).getTime();
+  if (diff < -45_000) {
+    const ahead = -diff;
+    const h = Math.round(ahead / 3_600_000);
+    if (h < 1) return 'in a few minutes';
+    if (h < 24) return `in ${h}h`;
+    const d = Math.round(h / 24);
+    if (d < 14) return `in ${d}d`;
+    return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
   const s = Math.round(diff / 1000);
   if (s < 45) return 'just now';
   const m = Math.round(s / 60);

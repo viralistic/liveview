@@ -7,7 +7,7 @@
 import type { SimulationLinkDatum, SimulationNodeDatum } from 'd3-force';
 import type { Company, Severity, TriggerKind, Workflow } from '../../data/types';
 import { SOURCE_LABEL, sourceKindFor, type SourceKind } from '../../lib/layout';
-import { healthTone, workflowHealth, worstSeverity } from '../../lib/health';
+import { healthColor, workflowHealth, worstSeverity } from '../../lib/health';
 import { seeded } from '../../lib/rng';
 
 export type ColorMode = 'company' | 'health' | 'trigger';
@@ -27,10 +27,14 @@ export interface GraphNode extends SimulationNodeDatum {
   /** workflow-to-workflow links only */
   callDegree: number;
   isolated: boolean;
-  /** labels of hubs stay visible when zoomed out */
+  /** hubs: several workflow links */
   hub: boolean;
   failing: boolean;
   inactive: boolean;
+  /** instance of a reusable product (purple ring) */
+  product: boolean;
+  /** temporary node created with "+ New workflow" */
+  draft: boolean;
   severity: Severity | null;
   health: number;
   x: number;
@@ -72,11 +76,11 @@ export interface BuildOptions {
 export const SOURCE_ORDER: SourceKind[] = ['internet', 'schedule', 'app', 'error'];
 export const sourceId = (k: SourceKind) => `src:${k}`;
 
-/** 7–18px, scaled by sqrt(runs in the last 7 days); fixed scale so sizes mean the same for every user. */
+/** 9–23px, scaled by sqrt(runs in the last 7 days); fixed scale so sizes mean the same for every user. */
 export function radiusFor(runs7d: number): number {
-  return 7 + 11 * Math.min(1, Math.sqrt(Math.max(0, runs7d)) / 45);
+  return 9 + 14 * Math.min(1, Math.sqrt(Math.max(0, runs7d)) / 45);
 }
-export const SOURCE_RADIUS: Record<SourceKind, number> = { internet: 24, schedule: 22, app: 20, error: 20 };
+export const SOURCE_RADIUS: Record<SourceKind, number> = { internet: 30, schedule: 28, app: 26, error: 26 };
 
 export function shortLabel(name: string, max = 32): string {
   return name.length > max ? name.slice(0, max - 1).trimEnd() + '…' : name;
@@ -91,7 +95,7 @@ export function companyAnchors(companyIds: string[], workflowCount: number): Map
     out.set(companyIds[0]!, { x: 0, y: 0 });
     return out;
   }
-  const R = Math.max(170, Math.min(360, 52 * Math.sqrt(workflowCount)));
+  const R = Math.max(190, Math.min(400, 58 * Math.sqrt(workflowCount)));
   const offset = n === 4 ? Math.PI / 4 : n === 2 ? Math.PI / 2 : 0;
   companyIds.forEach((id, i) => {
     const a = -Math.PI / 2 + offset + (i / n) * Math.PI * 2;
@@ -142,6 +146,8 @@ export function buildGraph(workflows: Workflow[], companies: Company[], opts: Bu
     n.isolated = n.callDegree === 0;
     n.failing = w.active && w.stats.lastStatus === 'error';
     n.inactive = !w.active;
+    n.product = !!w.productId;
+    n.draft = w.id.startsWith('draft-');
     n.severity = worstSeverity(w);
     n.health = workflowHealth(w);
     n.degree = 0;
@@ -162,7 +168,7 @@ export function buildGraph(workflows: Workflow[], companies: Company[], opts: Bu
   if (opts.showSources) {
     const byKind = new Map<SourceKind, GraphNode[]>();
     for (const n of nodes) {
-      const k = n.wf ? sourceKindFor(n.wf.trigger.kind) : null;
+      const k = n.wf && !n.draft ? sourceKindFor(n.wf.trigger.kind) : null;
       if (!k) continue;
       if (!byKind.has(k)) byKind.set(k, []);
       byKind.get(k)!.push(n);
@@ -186,6 +192,8 @@ export function buildGraph(workflows: Workflow[], companies: Company[], opts: Bu
       n.isolated = false;
       n.failing = false;
       n.inactive = false;
+      n.product = false;
+      n.draft = false;
       n.severity = null;
       n.health = 100;
       n.degree = 0;
@@ -218,17 +226,19 @@ export function buildGraph(workflows: Workflow[], companies: Company[], opts: Bu
 /* colors                                                              */
 /* ------------------------------------------------------------------ */
 
-export const HEALTH_COLOR = { good: '#1fa463', warn: '#f2a21b', bad: '#ef4444' } as const;
-export const HEALTH_LABEL = { good: 'Healthy · 85+', warn: 'Needs attention · 60 to 84', bad: 'Unhealthy · below 60' } as const;
+/** Same semantics as healthColor(): fluorescent when full, blended pink when lower. No traffic lights. */
+export const HEALTH_COLOR = { good: 'var(--health-full)', mid: 'var(--health-mid)', low: 'var(--health-low)' } as const;
+export const HEALTH_LABEL = { good: 'Healthy · 90+', mid: 'Lower · 70 to 89', low: 'Low · below 70' } as const;
 
+/** No yellow, no purple (purple belongs to products). */
 export const TRIGGER_COLOR: Record<TriggerKind, string> = {
   webhook: '#ff6d5a',
   schedule: '#31c4ab',
-  app: '#7b61ff',
-  called: '#3a42e9',
-  error: '#e44d26',
-  manual: '#7d7d87',
-  chat: '#7b61ff',
+  app: '#3b82f6',
+  called: '#64748b',
+  error: '#e5484d',
+  manual: '#a3a3a3',
+  chat: '#0ea5e9',
 };
 export const TRIGGER_LABEL: Record<TriggerKind, string> = {
   webhook: 'Webhook',
@@ -244,7 +254,7 @@ export const SOURCE_NEUTRAL = '#8a8a8a';
 
 export function nodeColor(n: GraphNode, mode: ColorMode, companies: Map<string, Company>): string {
   if (n.kind === 'source' || !n.wf) return SOURCE_NEUTRAL;
-  if (mode === 'health') return HEALTH_COLOR[healthTone(n.health)];
+  if (mode === 'health') return healthColor(n.health);
   if (mode === 'trigger') return TRIGGER_COLOR[n.wf.trigger.kind];
   return companies.get(n.companyId ?? '')?.color ?? SOURCE_NEUTRAL;
 }

@@ -2,7 +2,6 @@
 import { useMemo } from 'react';
 import { useStore } from '@nanostores/react';
 import type { Workflow } from '../../data/types';
-import { companyById } from '../../data/companies';
 import type { WorldLayout } from '../../lib/layout';
 import { interWorkflowRoute } from './geometry';
 import { $hoverWf } from './viewport';
@@ -16,7 +15,6 @@ interface InterEdge {
   d: string;
   dur: number;
   dots: number;
-  color: string;
 }
 
 export function Edges({ layout, workflowById, visibleIds, selection, showConnections }: { layout: WorldLayout; workflowById: ReadonlyMap<string, Workflow>; visibleIds: ReadonlySet<string>; selection: Selection; showConnections: boolean }) {
@@ -42,7 +40,6 @@ export function Edges({ layout, workflowById, visibleIds, selection, showConnect
           d: route.d,
           dur: Math.min(9, Math.max(2.6, route.len / 460)),
           dots: wf.active ? (traffic > 150 ? 3 : traffic > 40 ? 2 : 1) : 0,
-          color: companyById(wf.companyId).color,
         });
       }
     }
@@ -64,7 +61,7 @@ export function Edges({ layout, workflowById, visibleIds, selection, showConnect
                   <animateMotion dur={`${dur.toFixed(2)}s`} repeatCount="indefinite" begin={`-${((i / e.dots) * dur).toFixed(2)}s`}>
                     <mpath href={`#${e.id}`} />
                   </animateMotion>
-                  <circle className={s.dot} r={hi ? 4.5 : 3.5} fill={e.color} fillOpacity={dim ? 0.3 : 0.7} />
+                  <circle className={[s.dot, s.edgeDot].join(' ')} data-hi={hi} data-dim={dim} r={hi ? 4.5 : 3.5} />
                 </g>
               ))}
             </g>

@@ -1,0 +1,8 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+import { ChangelogPage } from '../components/pages/ChangelogPage';
+---
+
+<AppShell title="Changelog" active="changelog" crumbs={[{ label: 'Changelog' }]} shareScope={{ kind: 'org' }}>
+  <ChangelogPage client:load />
+</AppShell>

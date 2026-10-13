@@ -6,3 +6,7 @@ export * from './credentials';
 export * from './comments';
 export * from './activity';
 export * from './nodeTypes';
+export * from './products';
+export * from './projects';
+export * from './planner';
+export * from './changelog';
