@@ -105,7 +105,7 @@
 .kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 4px; font-family: var(--font-sans); font-size: 10.5px; font-weight: var(--fw-medium); color: var(--text-muted); background: var(--surface-3); border: 1px solid var(--border); box-shadow: inset 0 -1px 0 rgba(0,0,0,0.06); }
 
 /* ---------- Node icon ---------- */
-.nodeIcon { display: inline-grid; place-items: center; border-radius: 8px; background: #fff; border: 1px solid var(--border); flex: none; }
+.nodeIcon { display: inline-grid; place-items: center; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); flex: none; }
 .nodeIcon svg { width: 55%; height: 55%; }
 .nodeIconFilled { border: 0; }
 .nodeIconFilled svg { color: #fff; }
