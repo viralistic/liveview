@@ -1,0 +1,61 @@
+---
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
+import '../styles/global.css';
+import { Sidebar, type NavKey } from '../components/shell/Sidebar';
+import { Topbar, type Crumb, type TopbarContext } from '../components/shell/Topbar';
+import { ShareDialog } from '../components/share/ShareDialog';
+import { Toast } from '../components/shell/Toast';
+import type { Scope } from '../data/types';
+
+interface Props {
+  title: string;
+  description?: string;
+  active: NavKey;
+  activeCompanyId?: string;
+  crumbs: Crumb[];
+  /** full-bleed pages (canvas, graph) manage their own scrolling */
+  bleed?: boolean;
+  shareScope?: Scope;
+  context?: TopbarContext;
+}
+const { title, description = 'LiveView: a multiplayer workflow manager for n8n.', active, activeCompanyId, crumbs, bleed = false, shareScope, context } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · LiveView</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <script is:inline>
+      // apply the persisted sidebar state before paint to avoid a layout flash
+      try {
+        var c = localStorage.getItem('lv.sidebar');
+        if (c === 'true') document.documentElement.setAttribute('data-sidebar-collapsed', 'true');
+      } catch (e) {}
+    </script>
+    <style is:inline>
+      html[data-sidebar-collapsed='true'] .app { grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr); }
+    </style>
+  </head>
+  <body>
+    <div class="app" data-collapsed="false">
+      <Sidebar client:load active={active} activeCompanyId={activeCompanyId} />
+      <div class="main">
+        <Topbar client:load crumbs={crumbs} shareScope={shareScope} context={context} />
+        {bleed ? (
+          <div class="page-bleed"><slot /></div>
+        ) : (
+          <div class="page"><div class="page-inner"><slot /></div></div>
+        )}
+      </div>
+    </div>
+    <ShareDialog client:load />
+    <Toast client:load />
+  </body>
+</html>

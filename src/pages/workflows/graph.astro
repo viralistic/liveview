@@ -1,0 +1,8 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import { Graph } from '../../components/graph/Graph';
+---
+
+<AppShell title="Graph" active="workflows" crumbs={[{ label: 'All workflows', href: '/workflows' }, { label: 'Graph' }]} bleed shareScope={{ kind: 'org' }}>
+  <Graph client:only="react" />
+</AppShell>

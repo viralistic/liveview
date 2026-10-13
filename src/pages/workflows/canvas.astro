@@ -1,0 +1,8 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import { Canvas } from '../../components/canvas/Canvas';
+---
+
+<AppShell title="Canvas" active="workflows" crumbs={[{ label: 'All workflows', href: '/workflows' }, { label: 'Canvas' }]} bleed shareScope={{ kind: 'org' }}>
+  <Canvas client:only="react" />
+</AppShell>

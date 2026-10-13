@@ -1,0 +1,10 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+---
+
+<AppShell title="Not found" active="none" crumbs={[{ label: 'Not found' }]}>
+  <div style="padding: 80px 0; text-align: center; color: var(--text-muted)">
+    <h1 style="font-size: var(--fs-2xl); margin-bottom: 8px">This page zoomed out of existence.</h1>
+    <p>Try the <a href="/" style="text-decoration: underline">overview</a> or <a href="/workflows/canvas" style="text-decoration: underline">the canvas</a>.</p>
+  </div>
+</AppShell>

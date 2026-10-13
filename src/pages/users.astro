@@ -1,0 +1,8 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+import { UsersPage } from '../components/pages/UsersPage';
+---
+
+<AppShell title="Users & access" active="users" crumbs={[{ label: 'Users & access' }]} shareScope={{ kind: 'org' }}>
+  <UsersPage client:load />
+</AppShell>

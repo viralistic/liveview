@@ -1,0 +1,35 @@
+{
+  "name": "liveview",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LiveView: a multiplayer workflow manager for n8n. Visualize every client's workflows on one canvas, with access control, health heatmaps and live cursors.",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/react": "^7.0.1",
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@nanostores/react": "^2.0.1",
+    "astro": "^7.3.8",
+    "boring-avatars": "^2.0.4",
+    "d3-force": "^3.0.0",
+    "lucide-react": "^1.56.0",
+    "nanostores": "^1.5.5",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/d3-force": "^3.0.10",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^6.0.2"
+  }
+}

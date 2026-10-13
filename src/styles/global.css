@@ -1,0 +1,219 @@
+/* ------------------------------------------------------------------
+   LiveView design tokens
+   Derived from n8n's 2026 rebrand (design-system _primitives.scss and
+   _tokens.scss): Geist + Geist Mono, monochrome primary, pink accent,
+   grey canvas (hsl 0 0% 96%), white surfaces, 8–14px radii.
+   Style direction: shadcn / Vercel — 1px hairlines, calm greys,
+   tight type, almost no color except where it carries meaning.
+------------------------------------------------------------------- */
+:root {
+  /* n8n primitives (oklch, copied from _primitives.scss) */
+  --pink-100: oklch(95.06% 0.0256 5.65);
+  --pink-200: oklch(90.05% 0.0541 5.33);
+  --pink-300: oklch(86.04% 0.0791 5.02);
+  --pink-400: oklch(82.05% 0.1071 4.98);
+  --pink-500: oklch(78.07% 0.136 5.02);
+  --pink-600: oklch(68.08% 0.148 5.02);
+  --pink-700: oklch(59.09% 0.1611 5.09);
+  --pink-800: oklch(40.08% 0.1209 4.81);
+
+  --neutral-50: oklch(98.51% 0 89.88);
+  --neutral-100: oklch(97.02% 0 89.88);
+  --neutral-150: oklch(95.51% 0 89.88);
+  --neutral-200: oklch(92.19% 0 89.88);
+  --neutral-300: oklch(88.53% 0 89.88);
+  --neutral-400: oklch(79.21% 0 89.88);
+  --neutral-500: oklch(68.3% 0 89.88);
+  --neutral-600: oklch(55.55% 0 89.88);
+  --neutral-700: oklch(38.67% 0 89.88);
+  --neutral-800: oklch(31.71% 0 89.88);
+  --neutral-900: oklch(26.86% 0 89.88);
+  --neutral-950: oklch(20.46% 0 89.88);
+
+  --orange-500: oklch(69.96% 0.202 44.44);
+  --orange-600: oklch(64.71% 0.2173 36.85);
+  --red-500: oklch(63.78% 0.2373 25.44);
+  --red-600: oklch(58.3% 0.2387 28.48);
+  --red-800: oklch(44.46% 0.1774 26.79);
+  --yellow-400: oklch(85.35% 0.1744 88.77);
+  --yellow-500: oklch(79.77% 0.1641 82.71);
+  --yellow-800: oklch(47.76% 0.1115 60.43);
+  --green-500: oklch(72.89% 0.2119 147.82);
+  --green-600: oklch(63.2% 0.186 147.37);
+  --green-800: oklch(44.68% 0.1187 151.4);
+  --blue-500: oklch(61.87% 0.2067 259.23);
+  --blue-800: oklch(42.42% 0.1982 265.5);
+  --purple-500: oklch(60.06% 0.2425 293.89);
+  --mint-500: oklch(71.05% 0.1276 181.6);
+
+  /* semantic: light theme (the "right side" of the app) */
+  --bg: hsl(0 0% 96%);                 /* n8n canvas grey */
+  --bg-subtle: var(--neutral-100);
+  --bg-sunken: var(--neutral-150);
+  --surface: #ffffff;
+  --surface-hover: rgba(0, 0, 0, 0.03);
+  --surface-active: rgba(0, 0, 0, 0.06);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-strong: rgba(0, 0, 0, 0.14);
+  --text: oklch(20% 0 0);
+  --text-secondary: var(--neutral-700);
+  --text-muted: var(--neutral-600);
+  --text-subtle: var(--neutral-500);
+  --text-disabled: var(--neutral-400);
+  --primary: oklch(20% 0 0);
+  --primary-hover: oklch(28% 0 0);
+  --primary-fg: #ffffff;
+  --brand: var(--pink-500);
+  --brand-strong: var(--pink-600);
+  --brand-text: var(--pink-700);
+  --brand-soft: var(--pink-100);
+  --focus-ring: 0 0 0 2px #fff, 0 0 0 4px rgba(0, 0, 0, 0.2);
+
+  /* semantic: status */
+  --success: var(--green-600);
+  --success-fg: var(--green-800);
+  --success-bg: oklch(98.19% 0.0181 155.83);
+  --success-border: oklch(92.58% 0.0845 155.86);
+  --warning: var(--yellow-500);
+  --warning-fg: var(--yellow-800);
+  --warning-bg: oklch(97.27% 0.0706 103.29);
+  --warning-border: oklch(94.53% 0.1293 101.4);
+  --danger: var(--red-500);
+  --danger-fg: var(--red-800);
+  --danger-bg: oklch(97.05% 0.0129 17.38);
+  --danger-border: oklch(88.34% 0.0616 18.39);
+  --info: var(--blue-500);
+  --info-fg: var(--blue-800);
+  --info-bg: oklch(97.05% 0.0142 254.6);
+  --info-border: oklch(88.2% 0.0588 253.97);
+
+  /* heatmap (Snapchat-map style severity colors) */
+  --heat-critical: var(--red-500);
+  --heat-inefficient: var(--orange-500);
+  --heat-minor: var(--yellow-400);
+
+  /* sidebar: the black "left side" */
+  --sidebar-bg: #0a0a0a;
+  --sidebar-bg-elevated: #141414;
+  --sidebar-fg: #fafafa;
+  --sidebar-fg-muted: oklch(68% 0 0);
+  --sidebar-fg-subtle: oklch(52% 0 0);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-hover: rgba(255, 255, 255, 0.06);
+  --sidebar-active: rgba(255, 255, 255, 0.1);
+  --sidebar-w: 272px;
+  --sidebar-w-collapsed: 64px;
+  --topbar-h: 56px;
+
+  /* shape */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* elevation */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 20px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 2px 8px rgba(0, 0, 0, 0.08), 0 16px 48px rgba(0, 0, 0, 0.14);
+  --shadow-xl: 0 4px 12px rgba(0, 0, 0, 0.1), 0 32px 80px rgba(0, 0, 0, 0.2);
+
+  /* type */
+  --font-sans: 'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Geist Mono Variable', 'Geist Mono', ui-monospace, Menlo, Consolas, monospace;
+  --fs-2xs: 11px;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 24px;
+  --fs-3xl: 30px;
+  --fs-4xl: 38px;
+  --fw-regular: 450;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --tracking-tight: -0.015em;
+  --tracking-tighter: -0.025em;
+
+  /* canvas */
+  --dot-color: rgba(0, 0, 0, 0.16);
+  --dot-size: 24px;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast: 120ms;
+  --dur: 180ms;
+  --dur-slow: 320ms;
+}
+
+/* ---- reset ---- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  line-height: 1.45;
+  font-feature-settings: 'ss02' 1, 'cv11' 1;
+  overflow: hidden;
+}
+h1, h2, h3, h4, p { margin: 0; }
+h1, h2, h3, h4 { font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); color: var(--text); }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+img, svg { display: block; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+code, kbd, .mono { font-family: var(--font-mono); font-feature-settings: normal; }
+::selection { background: var(--pink-200); color: var(--text); }
+:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+
+/* ---- scrollbars (thin, calm) ---- */
+* { scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.18) transparent; }
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- utilities ---- */
+.tnum { font-variant-numeric: tabular-nums; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.dots {
+  background-color: var(--bg);
+  background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1.2px);
+  background-size: var(--dot-size) var(--dot-size);
+}
+
+/* app shell */
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+  transition: grid-template-columns var(--dur-slow) var(--ease-out);
+}
+.app[data-collapsed='true'] { grid-template-columns: var(--sidebar-w-collapsed) minmax(0, 1fr); }
+.main { display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%; }
+.page { flex: 1; min-height: 0; overflow: auto; }
+.page-inner { padding: 28px 32px 40px; max-width: 1480px; margin: 0 auto; width: 100%; }
+.page-bleed { flex: 1; min-height: 0; position: relative; }
+
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(4px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

@@ -1,0 +1,8 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import { WorkflowsListPage } from '../../components/pages/WorkflowsListPage';
+---
+
+<AppShell title="All workflows" active="workflows" crumbs={[{ label: 'All workflows' }, { label: 'List' }]} shareScope={{ kind: 'org' }}>
+  <WorkflowsListPage client:load />
+</AppShell>

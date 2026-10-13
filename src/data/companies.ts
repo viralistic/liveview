@@ -1,0 +1,61 @@
+import type { Company } from './types';
+
+export const COMPANIES: Company[] = [
+  {
+    id: 'viralistic',
+    slug: 'viralistic',
+    name: 'Viralistic Digital Agency Amsterdam',
+    shortName: 'Viralistic',
+    initials: 'VI',
+    domain: 'viralistic.nl',
+    industry: 'Digital agency',
+    color: '#e8558a',
+    description: 'Our own agency automations: lead intake, invoicing, reporting and the shared services other clients call.',
+    onboardedAt: '2024-02-12T09:00:00Z',
+    city: 'Amsterdam',
+    defaultPinned: true,
+  },
+  {
+    id: 'volkswagen',
+    slug: 'volkswagen',
+    name: 'Volkswagen',
+    shortName: 'Volkswagen',
+    initials: 'VW',
+    domain: 'volkswagen.nl',
+    industry: 'Automotive · dealer network',
+    color: '#2f6bff',
+    description: 'Dealer lead routing, test-drive bookings, CRM sync with the dealer DMS and after-sales reminders.',
+    onboardedAt: '2025-03-03T09:00:00Z',
+    city: 'Amersfoort',
+    defaultPinned: true,
+  },
+  {
+    id: 'transmissies',
+    slug: 'transmissies',
+    name: 'Transmissies.nl',
+    shortName: 'Transmissies.nl',
+    initials: 'TR',
+    domain: 'transmissies.nl',
+    industry: 'Automotive parts · e-commerce',
+    color: '#f28c28',
+    description: 'Webshop order flow, ERP stock sync with Exact Online, quote requests and customer notifications.',
+    onboardedAt: '2025-06-18T09:00:00Z',
+    city: 'Rotterdam',
+  },
+  {
+    id: 'hoasted',
+    slug: 'hoasted',
+    name: 'Hoasted',
+    shortName: 'Hoasted',
+    initials: 'HO',
+    domain: 'hoasted.com',
+    industry: 'Web hosting',
+    color: '#2fb67c',
+    description: 'Incident routing to the status page, SSL expiry checks, AI support triage and invoice dunning.',
+    onboardedAt: '2026-01-20T09:00:00Z',
+    city: 'Utrecht',
+  },
+];
+
+export const companyById = (id: string): Company => COMPANIES.find((c) => c.id === id)!;
+export const companyBySlug = (slug: string): Company | undefined => COMPANIES.find((c) => c.slug === slug);

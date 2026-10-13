@@ -1,0 +1,21 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import { COMPANIES } from '../../data';
+import { CompanyPage } from '../../components/pages/CompanyPage';
+
+export function getStaticPaths() {
+  return COMPANIES.map((c) => ({ params: { slug: c.slug }, props: { company: c } }));
+}
+const { company } = Astro.props;
+---
+
+<AppShell
+  title={company.shortName}
+  active="company"
+  activeCompanyId={company.id}
+  crumbs={[{ label: 'Companies', href: '/' }, { label: company.shortName }]}
+  shareScope={{ kind: 'company', companyId: company.id }}
+  context={{ companyId: company.id }}
+>
+  <CompanyPage client:load companyId={company.id} />
+</AppShell>

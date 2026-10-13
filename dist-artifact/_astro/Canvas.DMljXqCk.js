@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime.BPMVGbCv.js";var t=e();function n(){return(0,t.jsx)(`div`,{className:`dots`,style:{position:`absolute`,inset:0,display:`grid`,placeItems:`center`,color:`var(--text-muted)`},children:`Canvas loading…`})}export{n as Canvas};
