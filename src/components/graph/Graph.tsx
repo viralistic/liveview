@@ -1,29 +1,39 @@
 /**
  * Obsidian-style graph view: every workflow the current user may see is a
- * node, every "Execute Workflow" relation a directed edge, and the outside
- * world (Internet, Schedules, App events, Errors) shows up as hollow source
- * nodes. Force layout by d3-force, rendered as SVG in world coordinates.
+ * node, every "Execute Workflow" relation a directed thread with data
+ * travelling along it, and the outside world (Internet, Schedules, App
+ * events, Errors) shows up as hollow source nodes. Force layout by d3-force,
+ * rendered as SVG in world coordinates. Other people's cursors wander
+ * around the graph and poke at nodes.
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { useStore } from '../../stores/session';
 import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY, type ForceLink, type ForceManyBody, type Simulation } from 'd3-force';
 import { Clock, Globe, Maximize2, Minus, Plus, TriangleAlert, Waypoints, Zap, type LucideIcon } from 'lucide-react';
-import { $heatmap, $visibleCompanies, $visibleWorkflows, toast } from '../../stores/session';
+import { USERS } from '../../data/users';
+import { workflowById } from '../../data/workflows';
+import type { Workflow } from '../../data/types';
+import { $currentUser, $grants, $heatmap, $visibleCompanies, $visibleWorkflows, toast, useStore } from '../../stores/session';
+import { canSeeWorkflow, highestRole } from '../../lib/access';
 import { SEVERITY_HEX } from '../../lib/health';
 import type { SourceKind } from '../../lib/layout';
+import { Avatar } from '../ui/Avatar';
 import { WorkflowPanel } from '../pages/WorkflowPanel';
+import { NewWorkflowButton, draftWorkflow } from '../canvas/NewWorkflow';
 import { buildGraph, matchesQuery, nodeColor, type GraphLink, type GraphNode } from './model';
 import { forceCluster, type ClusterForce } from './forces';
 import { Controls, DEFAULT_SETTINGS, type Settings } from './Controls';
 import { Legend } from './Legend';
+import { GraphCursors, type CursorHost } from './GraphCursors';
+import type { BotSpec, Pt } from './cursorBots';
 import s from './graph.module.css';
 
 const SOURCE_ICON: Record<SourceKind, LucideIcon> = { internet: Globe, schedule: Clock, app: Zap, error: TriangleAlert };
 const MIN_K = 0.25;
 const MAX_K = 3;
-const PANEL_W = 360;
-const LABEL_FADE_START = 0.6;
-const LABEL_FADE_END = 0.78;
+/** floating glass rail: 380px wide, inset 16px */
+const PANEL_W = 380 + 16;
+const LABEL_PX = 12.5;
+const SOURCE_LABEL_PX = 10.5;
 
 interface View {
   x: number;
@@ -40,21 +50,64 @@ interface Box {
 type Placement = 'b' | 't' | 'r' | 'l';
 const PLACEMENTS: Placement[] = ['b', 't', 'r', 'l'];
 
+/** A curved thread between two nodes: quadratic bezier, trimmed at the node edges. */
+interface Thread {
+  link: GraphLink;
+  d: string;
+  p0: Pt;
+  c: Pt;
+  p1: Pt;
+  len: number;
+  phase: number;
+}
+
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const readFocus = () => (typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('focus'));
 const intersects = (a: Box, b: Box) => a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
-/** rough text width for 12px Geist medium, used for label occlusion */
-const estWidth = (n: GraphNode) => (n.kind === 'source' ? n.label.length * 7.2 : n.label.length * 6.4);
+/** rough text width for 12.5px Geist medium, used for label occlusion */
+const estWidth = (n: GraphNode) => (n.kind === 'source' ? n.label.length * 7.2 : n.label.length * 6.7);
 /** screen-space box a label would occupy at a given placement around a node */
 function labelBox(p: Placement, sx: number, sy: number, rr: number, w: number): Box {
-  if (p === 'b') return { x1: sx - w / 2 - 3, y1: sy + rr + 5, x2: sx + w / 2 + 3, y2: sy + rr + 20 };
-  if (p === 't') return { x1: sx - w / 2 - 3, y1: sy - rr - 20, x2: sx + w / 2 + 3, y2: sy - rr - 5 };
-  if (p === 'r') return { x1: sx + rr + 5, y1: sy - 8, x2: sx + rr + 9 + w, y2: sy + 8 };
-  return { x1: sx - rr - 9 - w, y1: sy - 8, x2: sx - rr - 5, y2: sy + 8 };
+  if (p === 'b') return { x1: sx - w / 2 - 3, y1: sy + rr + 5, x2: sx + w / 2 + 3, y2: sy + rr + 21 };
+  if (p === 't') return { x1: sx - w / 2 - 3, y1: sy - rr - 21, x2: sx + w / 2 + 3, y2: sy - rr - 5 };
+  if (p === 'r') return { x1: sx + rr + 6, y1: sy - 8.5, x2: sx + rr + 10 + w, y2: sy + 8.5 };
+  return { x1: sx - rr - 10 - w, y1: sy - 8.5, x2: sx - rr - 6, y2: sy + 8.5 };
 }
+const hash01 = (str: string) => {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+  return ((h >>> 0) % 1000) / 1000;
+};
+function threadFor(l: GraphLink, k: number): Thread | null {
+  const sx = l.source.x;
+  const sy = l.source.y;
+  const tx = l.target.x;
+  const ty = l.target.y;
+  const dx = tx - sx;
+  const dy = ty - sy;
+  const d = Math.hypot(dx, dy) || 1;
+  const ux = dx / d;
+  const uy = dy / d;
+  const endGap = l.kind === 'call' ? l.target.r + 9 / k : l.target.r + 2;
+  if (d <= l.source.r + endGap + 6) return null;
+  // bulge to the left of the direction of travel, so reciprocal threads curve apart
+  const bulge = Math.min(72, d * 0.17) * (l.kind === 'source' ? 0.55 : 1);
+  const c = { x: (sx + tx) / 2 - uy * bulge, y: (sy + ty) / 2 + ux * bulge };
+  const a0 = Math.hypot(c.x - sx, c.y - sy) || 1;
+  const a1 = Math.hypot(c.x - tx, c.y - ty) || 1;
+  const p0 = { x: sx + ((c.x - sx) / a0) * (l.source.r + 1), y: sy + ((c.y - sy) / a0) * (l.source.r + 1) };
+  const p1 = { x: tx + ((c.x - tx) / a1) * endGap, y: ty + ((c.y - ty) / a1) * endGap };
+  return { link: l, d: `M${p0.x.toFixed(1)} ${p0.y.toFixed(1)} Q${c.x.toFixed(1)} ${c.y.toFixed(1)} ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`, p0, c, p1, len: d + bulge * 0.35, phase: hash01(l.id) };
+}
+const quadPoint = (p0: Pt, c: Pt, p1: Pt, t: number): Pt => {
+  const mt = 1 - t;
+  return { x: mt * mt * p0.x + 2 * mt * t * c.x + t * t * p1.x, y: mt * mt * p0.y + 2 * mt * t * c.y + t * t * p1.y };
+};
 
 export function Graph() {
+  const me = useStore($currentUser);
+  const grants = useStore($grants);
   const workflows = useStore($visibleWorkflows);
   const companies = useStore($visibleCompanies);
   const heatmap = useStore($heatmap);
@@ -62,9 +115,13 @@ export function Graph() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [selectedId, setSelectedId] = useState<string | null>(readFocus);
   const [hoverId, setHoverId] = useState<string | null>(null);
+  const [botHover, setBotHover] = useState<Record<string, string | null>>({});
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [panning, setPanning] = useState(false);
-  const [controlsOpen, setControlsOpen] = useState(() => (typeof window === 'undefined' ? true : window.innerWidth >= 1100));
+  const [controlsOpen, setControlsOpen] = useState(false);
+  const [legendPinned, setLegendPinned] = useState(false);
+  const [followId, setFollowId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Workflow[]>([]);
   const [view, setViewState] = useState<View>({ x: 0, y: 0, k: 1 });
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [, setFrame] = useState(0);
@@ -74,24 +131,33 @@ export function Graph() {
   const simRef = useRef<Simulation<GraphNode, GraphLink> | null>(null);
   const linkRef = useRef<ForceLink<GraphNode, GraphLink> | null>(null);
   const clusterRef = useRef<ClusterForce | null>(null);
+  /** every node ever seen (positions carry over when a node comes back) */
   const nodeMapRef = useRef(new Map<string, GraphNode>());
+  /** nodes currently in the graph */
+  const liveNodesRef = useRef(new Map<string, GraphNode>());
   const viewRef = useRef(view);
   const sizeRef = useRef(size);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
   const userMovedRef = useRef(false);
+  const botTouchedRef = useRef(false);
   const startedRef = useRef(false);
   const rafRef = useRef(0);
   const animRef = useRef(0);
   const dragRef = useRef<string | null>(null);
+  const followRef = useRef(followId);
+  followRef.current = followId;
   const appliedForcesRef = useRef({ linkDistance: DEFAULT_SETTINGS.linkDistance, repulsion: DEFAULT_SETTINGS.repulsion });
   const lastPlacementRef = useRef(new Map<string, Placement>());
+  const threadsRef = useRef(new Map<string, Thread>());
+  const blobEls = useRef(new Map<string, SVGCircleElement>());
 
   /* ---------------- model ---------------- */
   const hidden = useMemo(() => new Set(settings.hiddenCompanies), [settings.hiddenCompanies]);
+  const allWorkflows = useMemo(() => (drafts.length ? [...workflows, ...drafts] : workflows), [workflows, drafts]);
   const graph = useMemo(
-    () => buildGraph(workflows, companies, { showSources: settings.showSources, showIsolated: settings.showIsolated, hidden, prev: nodeMapRef.current }),
-    [workflows, companies, settings.showSources, settings.showIsolated, hidden],
+    () => buildGraph(allWorkflows, companies, { showSources: settings.showSources, showIsolated: settings.showIsolated, hidden, prev: nodeMapRef.current }),
+    [allWorkflows, companies, settings.showSources, settings.showIsolated, hidden],
   );
   const companyMap = useMemo(() => new Map(companies.map((c) => [c.id, c])), [companies]);
   const counts = useMemo(() => {
@@ -112,17 +178,44 @@ export function Graph() {
     return m;
   }, [graph]);
 
+  // other people's cursors: every online user but the viewer, limited to nodes they may see
+  const botSpecs = useMemo<BotSpec[]>(() => {
+    const out: BotSpec[] = [];
+    const nodeIds = graph.nodes.filter((n) => n.kind === 'workflow' && !n.draft).map((n) => n.id);
+    for (const u of USERS) {
+      if (!u.online || u.id === me.id) continue;
+      const targets = nodeIds.filter((id) => {
+        const wf = workflowById(id);
+        return !!wf && canSeeWorkflow(u.id, wf, grants);
+      });
+      if (!targets.length) continue;
+      const viewing = u.presence?.viewing;
+      const preferred = viewing ? targets.filter((id) => id === viewing || workflowById(id)?.companyId === viewing) : [];
+      const viewingWf = viewing ? workflowById(viewing) : undefined;
+      const viewingLabel = viewingWf ? viewingWf.name : viewing ? (companyMap.get(viewing)?.shortName ?? 'the graph') : 'the graph';
+      out.push({ user: u, targets, preferred, viewingLabel });
+    }
+    return out;
+  }, [graph, grants, me.id, companyMap]);
+
   const selectedWf = selectedId ? workflows.find((w) => w.id === selectedId) ?? null : null;
   const panelOpen = !!selectedWf;
   const panelOpenRef = useRef(panelOpen);
   panelOpenRef.current = panelOpen;
   const controlsOpenRef = useRef(controlsOpen);
   controlsOpenRef.current = controlsOpen;
+  const myRole = highestRole(me.id, grants);
+  const viewOnly = myRole === 'viewer' || myRole === 'commenter';
 
   /* ---------------- viewport helpers ---------------- */
   const setView = useCallback((v: View) => {
     viewRef.current = v;
     setViewState(v);
+  }, []);
+  /** the person moved the camera themselves: no auto-fit, no follow */
+  const userInteracted = useCallback(() => {
+    userMovedRef.current = true;
+    if (followRef.current) setFollowId(null);
   }, []);
 
   const animateTo = useCallback(
@@ -156,8 +249,7 @@ export function Graph() {
       minY = Math.min(minY, n.y - n.r);
       maxY = Math.max(maxY, n.y + n.r);
     }
-    // side labels can stick out ~120px beyond the node circles
-    const pad = { l: 118, r: 118 + (controlsOpenRef.current ? 268 : 0), t: 60, b: 150 };
+    const pad = { l: 110, r: 110 + (controlsOpenRef.current ? 272 : 56), t: 70, b: 110 };
     const availW = Math.max(120, w - (panelOpenRef.current ? PANEL_W : 0) - pad.l - pad.r);
     const availH = Math.max(120, h - pad.t - pad.b);
     const bw = Math.max(1, maxX - minX);
@@ -196,10 +288,26 @@ export function Graph() {
       const cy = h / 2;
       const k = clamp(v.k * factor, MIN_K, MAX_K);
       const r = k / v.k;
-      userMovedRef.current = true;
+      userInteracted();
       animateTo({ k, x: cx - (cx - v.x) * r, y: cy - (cy - v.y) * r }, 200);
     },
-    [animateTo],
+    [animateTo, userInteracted],
+  );
+
+  /** follow mode: ease the camera towards a world point every frame */
+  const followPoint = useCallback(
+    (p: Pt) => {
+      const v = viewRef.current;
+      const { w, h } = sizeRef.current;
+      const cx = (w - (panelOpenRef.current ? PANEL_W : 0)) / 2;
+      const tx = cx - p.x * v.k;
+      const ty = h / 2 - p.y * v.k;
+      const nx = v.x + (tx - v.x) * 0.1;
+      const ny = v.y + (ty - v.y) * 0.1;
+      if (Math.abs(nx - v.x) < 0.08 && Math.abs(ny - v.y) < 0.08) return;
+      setView({ k: v.k, x: nx, y: ny });
+    },
+    [setView],
   );
 
   /* ---------------- simulation ---------------- */
@@ -213,8 +321,8 @@ export function Graph() {
       .alphaDecay(0.035)
       .velocityDecay(0.42)
       .force('link', link)
-      .force('charge', forceManyBody<GraphNode>().strength((d) => -settingsRef.current.repulsion * (d.kind === 'source' ? 2 : 1)).distanceMax(420))
-      .force('collide', forceCollide<GraphNode>().radius((d) => d.r + 6).strength(0.9).iterations(2))
+      .force('charge', forceManyBody<GraphNode>().strength((d) => -settingsRef.current.repulsion * (d.kind === 'source' ? 2 : 1)).distanceMax(460))
+      .force('collide', forceCollide<GraphNode>().radius((d) => d.r + 8).strength(0.9).iterations(2))
       .force('center', forceCenter(0, 0).strength(0.04))
       .force('x', forceX<GraphNode>(0).strength(0.012))
       .force('y', forceY<GraphNode>(0).strength(0.012))
@@ -229,7 +337,7 @@ export function Graph() {
       }
     });
     sim.on('end', () => {
-      if (!userMovedRef.current) fitRef.current(true);
+      if (!userMovedRef.current && !botTouchedRef.current) fitRef.current(true);
     });
     simRef.current = sim;
     linkRef.current = link;
@@ -265,6 +373,7 @@ export function Graph() {
   useEffect(() => {
     const sim = ensureSim();
     const link = linkRef.current!;
+    liveNodesRef.current = new Map(graph.nodes.map((n) => [n.id, n] as const));
     for (const n of graph.nodes) nodeMapRef.current.set(n.id, n);
     clusterRef.current!.anchors(graph.anchors).strength(graph.anchors.size <= 1 ? 0.05 : 0.22);
     sim.nodes(graph.nodes);
@@ -317,29 +426,33 @@ export function Graph() {
       const k = clamp(v.k * Math.exp(-delta * (e.ctrlKey ? 0.01 : 0.0014)), MIN_K, MAX_K);
       const r = k / v.k;
       cancelAnimationFrame(animRef.current);
-      userMovedRef.current = true;
+      userInteracted();
       setView({ k, x: mx - (mx - v.x) * r, y: my - (my - v.y) * r });
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [setView]);
+  }, [setView, userInteracted]);
 
-  // keyboard: Esc closes the panel, F fits
+  // keyboard: Esc closes the panel, F fits, ? pins the legend
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
-      const typing = !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+      const typing = !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+      if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (document.querySelector('[role="dialog"]')) return;
       if (e.key === 'Escape') {
-        if (typing) return;
+        if (followRef.current) return setFollowId(null);
         setSelectedId(null);
-      } else if ((e.key === 'f' || e.key === 'F') && !typing && !e.metaKey && !e.ctrlKey) {
-        userMovedRef.current = true;
+      } else if (e.key === 'f' || e.key === 'F') {
+        userInteracted();
         fitRef.current(true);
+      } else if (e.key === '?') {
+        setLegendPinned((v) => !v);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [userInteracted]);
 
   // a selection that the current user can no longer see closes the panel
   useEffect(() => {
@@ -355,10 +468,39 @@ export function Graph() {
     window.history.replaceState(null, '', url);
   }, [selectedId]);
 
+  // data blobs travelling along the threads (rAF, refs only)
+  useEffect(() => {
+    let raf = 0;
+    const loop = (nowMs: number) => {
+      const t = nowMs / 1000;
+      const threads = threadsRef.current;
+      for (const [key, el] of blobEls.current) {
+        const hashAt = key.lastIndexOf('#');
+        const th = threads.get(key.slice(0, hashAt));
+        if (!th) {
+          el.setAttribute('visibility', 'hidden');
+          continue;
+        }
+        const i = Number(key.slice(hashAt + 1));
+        const period = clamp(th.len / 48, 2.8, 7.5);
+        const u = (t / period + th.phase + i * 0.5) % 1;
+        const p = quadPoint(th.p0, th.c, th.p1, u);
+        el.setAttribute('cx', p.x.toFixed(1));
+        el.setAttribute('cy', p.y.toFixed(1));
+        el.style.opacity = String(clamp(Math.sin(Math.PI * u) * 1.8, 0, 1));
+        el.removeAttribute('visibility');
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   /* ---------------- pointer interactions ---------------- */
   const select = useCallback(
     (n: GraphNode) => {
       if (n.kind !== 'workflow') return;
+      if (n.draft) return toast('Draft workflow: build it in n8n first (demo)');
       setSelectedId(n.id);
       // nudge the view if the panel would cover the node
       const v = viewRef.current;
@@ -383,11 +525,9 @@ export function Graph() {
       if (!start.moved && Math.hypot(dx, dy) > 3) {
         start.moved = true;
         setPanning(true);
+        userInteracted();
       }
-      if (start.moved) {
-        userMovedRef.current = true;
-        setView({ ...viewRef.current, x: start.vx + dx, y: start.vy + dy });
-      }
+      if (start.moved) setView({ ...viewRef.current, x: start.vx + dx, y: start.vy + dy });
     };
     const up = () => {
       window.removeEventListener('pointermove', move);
@@ -417,7 +557,7 @@ export function Graph() {
         start.moved = true;
         dragRef.current = n.id;
         setDraggingId(n.id);
-        userMovedRef.current = true;
+        userInteracted();
         sim.alphaTarget(0.3).restart();
       }
       const v = viewRef.current;
@@ -443,6 +583,23 @@ export function Graph() {
     window.addEventListener('pointercancel', up);
   };
 
+  const cursorHost = useMemo<CursorHost>(
+    () => ({
+      view: viewRef,
+      nodes: liveNodesRef,
+      sim: simRef,
+      viewerDrag: dragRef,
+      onBotHover: (uid, nid) => setBotHover((prev) => (prev[uid] === nid ? prev : { ...prev, [uid]: nid })),
+      onBotTouched: () => {
+        botTouchedRef.current = true;
+      },
+      followPoint,
+    }),
+    [followPoint],
+  );
+
+  const onFollow = useCallback((id: string | null) => setFollowId(id), []);
+
   /* ---------------- derived render state ---------------- */
   const k = view.k;
   const q = settings.query.trim().toLowerCase();
@@ -453,21 +610,34 @@ export function Graph() {
     for (const id of adjacency.get(hoverId) ?? []) set.add(id);
     return set;
   }, [hoverId, adjacency]);
+  const botHoverIds = useMemo(() => new Set(Object.values(botHover).filter((v): v is string => !!v)), [botHover]);
 
   const isDim = (n: GraphNode) => (hoverSet ? !hoverSet.has(n.id) : matched ? !matched.has(n.id) : false);
   const isLinkDim = (l: GraphLink) =>
     hoverSet ? !(l.source.id === hoverId || l.target.id === hoverId) : matched ? !(matched.has(l.source.id) && matched.has(l.target.id)) : false;
-  const isLinkHi = (l: GraphLink) =>
-    (!!hoverId && (l.source.id === hoverId || l.target.id === hoverId)) || (!!selectedId && (l.source.id === selectedId || l.target.id === selectedId));
+  const touches = (l: GraphLink, id: string | null) => !!id && (l.source.id === id || l.target.id === id);
+  const isLinkHi = (l: GraphLink) => touches(l, hoverId) || touches(l, selectedId) || [...botHoverIds].some((id) => touches(l, id));
 
-  // which labels to draw and where: zoom fade, hubs always, hovered neighbourhood always,
-  // then greedy placement (below, above, right, left) that avoids other labels and other nodes.
-  // The previous placement is tried first so labels do not flicker while the layout moves.
+  // labels are hidden by default: shown for the hovered / selected node and its neighbours,
+  // for nodes other people's cursors are on, for drafts, and as a tiny caption on sources.
+  const activeIds = new Set<string>();
+  const labelIds = new Set<string>();
+  const reveal = (id: string | null) => {
+    if (!id) return;
+    activeIds.add(id);
+    labelIds.add(id);
+    for (const nb of adjacency.get(id) ?? []) labelIds.add(nb);
+  };
+  reveal(selectedId);
+  reveal(hoverId);
+  for (const id of botHoverIds) reveal(id);
+  for (const n of graph.nodes) if (n.kind === 'source' || n.draft) labelIds.add(n.id);
+
+  // greedy placement (below, above, right, left) avoiding other labels and nodes; the previous placement is tried first
   const labelPlacement = new Map<string, Placement>();
-  if (settings.showLabels) {
-    const prio = (n: GraphNode) =>
-      (n.id === selectedId ? 1000 : 0) + (n.id === hoverId ? 900 : 0) + (hoverSet?.has(n.id) ? 800 : 0) + (n.kind === 'source' ? 200 : 0) + (n.hub ? 100 : 0) + n.r;
-    const order = [...graph.nodes].sort((a, b) => prio(b) - prio(a));
+  {
+    const prio = (n: GraphNode) => (n.id === selectedId ? 1000 : 0) + (n.id === hoverId ? 900 : 0) + (activeIds.has(n.id) ? 800 : 0) + (n.kind === 'source' ? 200 : 0) + n.r;
+    const order = graph.nodes.filter((n) => labelIds.has(n.id)).sort((a, b) => prio(b) - prio(a));
     const nodeBoxes: Box[] = graph.nodes.map((n) => {
       const sx = n.x * k + view.x;
       const sy = n.y * k + view.y;
@@ -476,10 +646,7 @@ export function Graph() {
     });
     const labelBoxes: Box[] = [];
     for (const n of order) {
-      const forced = n.id === selectedId || n.id === hoverId || (hoverSet?.has(n.id) ?? false);
-      if (hoverSet && !forced) continue;
-      if (matched && !matched.has(n.id) && !forced) continue;
-      if (!forced && !n.hub && k < LABEL_FADE_START) continue;
+      if (matched && !matched.has(n.id) && !activeIds.has(n.id)) continue;
       const w = estWidth(n);
       const sx = n.x * k + view.x;
       const sy = n.y * k + view.y;
@@ -496,17 +663,25 @@ export function Graph() {
           break;
         }
       }
-      if (!chosen && forced) {
+      if (!chosen) {
         chosen = last ?? 'b';
         labelBoxes.push(labelBox(chosen, sx, sy, rr, w));
       }
-      if (chosen) {
-        labelPlacement.set(n.id, chosen);
-        lastPlacementRef.current.set(n.id, chosen);
-      }
+      labelPlacement.set(n.id, chosen);
+      lastPlacementRef.current.set(n.id, chosen);
     }
   }
-  const fade = clamp((k - LABEL_FADE_START) / (LABEL_FADE_END - LABEL_FADE_START), 0, 1);
+
+  // threads (curved) for this frame; the blob loop reads them from the ref
+  const threads: Thread[] = [];
+  const threadMap = new Map<string, Thread>();
+  for (const l of graph.links) {
+    const th = threadFor(l, k);
+    if (!th) continue;
+    threads.push(th);
+    threadMap.set(l.id, th);
+  }
+  threadsRef.current = threadMap;
 
   const dotSpacing = (() => {
     let sp = 24 * k;
@@ -514,10 +689,15 @@ export function Graph() {
     while (sp > 36) sp /= 2;
     return sp;
   })();
+  const haloScale = Math.pow(1 / Math.min(1, k), 0.45);
 
   const hasFailing = graph.nodes.some((n) => n.failing);
-  const hasIssues = graph.nodes.some((n) => n.severity);
+  const hasBreaking = graph.nodes.some((n) => n.severity === 'critical');
+  const hasWasteful = graph.nodes.some((n) => n.severity === 'inefficient');
+  const hasProducts = graph.nodes.some((n) => n.product);
   const empty = graph.nodes.length === 0;
+  const followUser = followId ? USERS.find((u) => u.id === followId) : undefined;
+  const blobColor = (l: GraphLink) => (settings.colorBy === 'company' ? (companyMap.get(l.source.companyId ?? '')?.color ?? 'var(--accent)') : 'var(--accent)');
 
   return (
     <div
@@ -531,45 +711,45 @@ export function Graph() {
       <svg ref={svgRef} className={s.svg} role="img" aria-label="Workflow graph">
         <defs>
           <marker id="lv-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth={9 / k} markerHeight={9 / k} markerUnits="userSpaceOnUse" orient="auto">
-            <path d="M2 1.5 L9 5 L2 8.5" fill="none" stroke="rgba(0,0,0,0.32)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path className={s.arrow} d="M2 1.5 L9 5 L2 8.5" />
           </marker>
           <marker id="lv-arrow-hi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth={9 / k} markerHeight={9 / k} markerUnits="userSpaceOnUse" orient="auto">
-            <path d="M2 1.5 L9 5 L2 8.5" fill="none" stroke="rgba(0,0,0,0.65)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            <path className={[s.arrow, s.arrowHi].join(' ')} d="M2 1.5 L9 5 L2 8.5" />
           </marker>
-          <filter id="lv-halo" x="-120%" y="-120%" width="340%" height="340%">
-            <feGaussianBlur stdDeviation="5" />
-          </filter>
+          <radialGradient id="lv-halo-critical">
+            <stop offset="0%" stopColor={SEVERITY_HEX.critical} stopOpacity={0.5} />
+            <stop offset="28%" stopColor={SEVERITY_HEX.critical} stopOpacity={0.3} />
+            <stop offset="60%" stopColor={SEVERITY_HEX.critical} stopOpacity={0.1} />
+            <stop offset="100%" stopColor={SEVERITY_HEX.critical} stopOpacity={0} />
+          </radialGradient>
+          <radialGradient id="lv-halo-inefficient">
+            <stop offset="0%" stopColor={SEVERITY_HEX.inefficient} stopOpacity={0.44} />
+            <stop offset="28%" stopColor={SEVERITY_HEX.inefficient} stopOpacity={0.25} />
+            <stop offset="60%" stopColor={SEVERITY_HEX.inefficient} stopOpacity={0.08} />
+            <stop offset="100%" stopColor={SEVERITY_HEX.inefficient} stopOpacity={0} />
+          </radialGradient>
         </defs>
         <rect className={s.bg} x="0" y="0" width="100%" height="100%" onPointerDown={onBgPointerDown} />
         <g transform={`translate(${view.x} ${view.y}) scale(${k})`}>
-          {/* halos sit under the edges so blur never muddies them */}
+          {/* halos sit under the threads: breaking is red, wasteful is orange, minor gets nothing */}
           {heatmap && (
             <g>
               {graph.nodes.map((n) =>
-                n.severity && !isDim(n) ? (
-                  <circle key={n.id} className={s.halo} cx={n.x} cy={n.y} r={n.r + 9} fill={SEVERITY_HEX[n.severity]} opacity={0.42} filter="url(#lv-halo)" />
+                (n.severity === 'critical' || n.severity === 'inefficient') && !isDim(n) ? (
+                  <circle key={n.id} className={s.halo} cx={n.x} cy={n.y} r={(3 * n.r + 27) * haloScale} fill={`url(#lv-halo-${n.severity})`} />
                 ) : null,
               )}
             </g>
           )}
           <g>
-            {graph.links.map((l) => {
-              const dx = l.target.x - l.source.x;
-              const dy = l.target.y - l.source.y;
-              const d = Math.hypot(dx, dy) || 1;
-              const ux = dx / d;
-              const uy = dy / d;
-              const endGap = l.kind === 'call' ? l.target.r + 7 / k : l.target.r + 1;
-              if (d <= l.source.r + endGap + 2) return null;
+            {threads.map((th) => {
+              const l = th.link;
               const hi = isLinkHi(l);
               return (
-                <line
+                <path
                   key={l.id}
                   className={[s.link, l.kind === 'source' ? s.linkSource : '', hi ? s.linkHi : '', isLinkDim(l) ? s.dim : ''].join(' ')}
-                  x1={l.source.x + ux * l.source.r}
-                  y1={l.source.y + uy * l.source.r}
-                  x2={l.target.x - ux * endGap}
-                  y2={l.target.y - uy * endGap}
+                  d={th.d}
                   vectorEffect="non-scaling-stroke"
                   markerEnd={l.kind === 'call' ? `url(#${hi ? 'lv-arrow-hi' : 'lv-arrow'})` : undefined}
                 />
@@ -577,18 +757,41 @@ export function Graph() {
             })}
           </g>
           <g>
+            {threads
+              .filter((th) => th.link.kind === 'call')
+              .flatMap((th) => {
+                const l = th.link;
+                const n = l.source.wf && l.source.wf.stats.runs24h > 150 ? 2 : 1;
+                const dim = isLinkDim(l);
+                return Array.from({ length: n }, (_, i) => {
+                  const key = `${l.id}#${i}`;
+                  return (
+                    <circle
+                      key={key}
+                      className={[s.blob, dim ? s.dim : ''].join(' ')}
+                      r={2.5 / k}
+                      style={{ fill: blobColor(l) }}
+                      ref={(el) => {
+                        if (el) blobEls.current.set(key, el);
+                        else blobEls.current.delete(key);
+                      }}
+                    />
+                  );
+                });
+              })}
+          </g>
+          <g>
             {graph.nodes.map((n) => {
               const color = nodeColor(n, settings.colorBy, companyMap);
               const dim = isDim(n);
               const isSelected = n.id === selectedId;
-              const active = isSelected || n.id === hoverId;
+              const active = activeIds.has(n.id);
               const Icon = n.sourceKind ? SOURCE_ICON[n.sourceKind] : null;
               const place = labelPlacement.get(n.id);
-              const forcedLabel = isSelected || n.id === hoverId || (hoverSet?.has(n.id) ?? false) || n.hub;
-              const labelOpacity = place ? (forcedLabel ? 1 : fade) : 0;
-              const fontSize = (n.kind === 'source' ? 10.5 : 12) / k;
-              const lx = place === 'r' ? n.r + 7 / k : place === 'l' ? -(n.r + 7 / k) : 0;
-              const ly = place === 't' ? -(n.r + 8 / k) : place === 'r' || place === 'l' ? 4.2 / k : n.r + (n.kind === 'source' ? 16 : 17) / k;
+              const labelOn = !!place;
+              const fontSize = (n.kind === 'source' ? SOURCE_LABEL_PX : LABEL_PX) / k;
+              const lx = place === 'r' ? n.r + 8 / k : place === 'l' ? -(n.r + 8 / k) : 0;
+              const ly = place === 't' ? -(n.r + 9 / k) : place === 'r' || place === 'l' ? 4.4 / k : n.r + (n.kind === 'source' ? 16 : 18) / k;
               const anchor = place === 'r' ? 'start' : place === 'l' ? 'end' : 'middle';
               const title = n.wf ? `${n.name} · ${companyMap.get(n.companyId ?? '')?.shortName ?? ''} · ${n.wf.trigger.label}` : `${n.name} · triggers ${n.degree} ${n.degree === 1 ? 'workflow' : 'workflows'}`;
               return (
@@ -612,25 +815,31 @@ export function Graph() {
                   onBlur={() => setHoverId((h) => (h === n.id ? null : h))}
                   aria-label={title}
                 >
-                  <circle className={s.hit} r={Math.max(n.r + 6, 14)} />
-                  {isSelected && <circle className={s.ring} r={n.r + 4.5} style={{ stroke: color }} vectorEffect="non-scaling-stroke" />}
-                  {n.kind === 'source' ? (
-                    <>
-                      <circle className={s.sourceCircle} r={n.r} vectorEffect="non-scaling-stroke" />
-                      {Icon && <Icon className={s.sourceIcon} x={-n.r * 0.42} y={-n.r * 0.42} width={n.r * 0.84} height={n.r * 0.84} strokeWidth={1.75} aria-hidden="true" />}
-                    </>
-                  ) : (
-                    <circle className={s.circle} r={n.r} fill={color} fillOpacity={n.inactive ? 0.45 : 1} vectorEffect="non-scaling-stroke" />
-                  )}
-                  {n.failing && <circle className={s.statusDot} cx={n.r * 0.72} cy={-n.r * 0.72} r={3.2 / Math.min(1, k)} vectorEffect="non-scaling-stroke" />}
+                  <circle className={s.hit} r={Math.max(n.r + 8, 16)} />
+                  <g className={s.body} data-active={active}>
+                    {n.kind === 'source' ? (
+                      <>
+                        <circle className={s.sourceCircle} r={n.r} vectorEffect="non-scaling-stroke" />
+                        {Icon && <Icon className={s.sourceIcon} x={-n.r * 0.42} y={-n.r * 0.42} width={n.r * 0.84} height={n.r * 0.84} strokeWidth={1.75} aria-hidden="true" />}
+                      </>
+                    ) : (
+                      <>
+                        <circle className={s.glow} r={n.r + 6} style={{ fill: color }} />
+                        {isSelected && <circle className={s.ring} r={n.r + (n.product ? 8 : 5)} style={{ stroke: color }} vectorEffect="non-scaling-stroke" />}
+                        <circle className={[s.circle, n.draft ? s.circleDraft : ''].join(' ')} r={n.r} style={{ fill: color }} fillOpacity={n.inactive && !n.draft ? 0.45 : 1} vectorEffect="non-scaling-stroke" />
+                        {n.product && <circle className={s.productRing} r={n.r + 4} vectorEffect="non-scaling-stroke" />}
+                        {n.failing && <circle className={s.statusDot} cx={n.r * 0.72} cy={-n.r * 0.72} r={3.2 / Math.min(1, k)} vectorEffect="non-scaling-stroke" />}
+                      </>
+                    )}
+                  </g>
                   <text
                     className={[s.label, n.kind === 'source' ? s.labelSource : '', active ? s.labelActive : ''].join(' ')}
+                    data-on={labelOn}
                     x={lx}
                     y={ly}
                     fontSize={fontSize}
                     textAnchor={anchor}
                     strokeWidth={3 / k}
-                    style={{ opacity: labelOpacity }}
                     aria-hidden="true"
                   >
                     {n.label}
@@ -641,6 +850,8 @@ export function Graph() {
           </g>
         </g>
       </svg>
+
+      {!empty && <GraphCursors specs={botSpecs} host={cursorHost} followId={followId} onFollow={onFollow} />}
 
       {empty && (
         <div className={s.empty}>
@@ -675,32 +886,58 @@ export function Graph() {
         triggerKinds={graph.triggerKinds}
         sourceKinds={graph.sourceKinds}
         hasFailing={hasFailing}
-        hasIssues={hasIssues}
+        hasBreaking={hasBreaking}
+        hasWasteful={hasWasteful}
+        hasProducts={hasProducts}
         heatmap={heatmap}
+        pinned={legendPinned}
+        onPin={setLegendPinned}
       />
 
-      <div className={s.zoom}>
-        <button type="button" className={s.zoomBtn} data-tip="Zoom in" onClick={() => zoomBy(1.25)} aria-label="Zoom in">
-          <Plus />
-        </button>
-        <button type="button" className={s.zoomBtn} data-tip="Zoom out" onClick={() => zoomBy(1 / 1.25)} aria-label="Zoom out">
-          <Minus />
-        </button>
-        <button type="button" className={s.zoomPct} data-tip="Reset to 100%" onClick={() => zoomBy(1 / k)} aria-label="Reset zoom to 100%">
-          {Math.round(k * 100)}%
-        </button>
-        <button
-          type="button"
-          className={s.zoomBtn}
-          data-tip="Fit to view · F"
-          onClick={() => {
-            userMovedRef.current = true;
-            fitRef.current(true);
-          }}
-          aria-label="Fit to view"
-        >
-          <Maximize2 />
-        </button>
+      {followUser && (
+        <div className={s.followPill}>
+          <Avatar user={followUser} size={22} />
+          Following {followUser.name.split(' ')[0]}
+          <button type="button" onClick={() => setFollowId(null)}>
+            Stop
+          </button>
+        </div>
+      )}
+
+      <div className={s.brStack}>
+        {!viewOnly && (
+          <NewWorkflowButton
+            companies={companies}
+            defaultCompanyId={selectedWf?.companyId ?? null}
+            onCreate={(d) => {
+              botTouchedRef.current = true; // keep the camera where it is while the new node settles in
+              setDrafts((prev) => [...prev, draftWorkflow(d, me.id)]);
+            }}
+          />
+        )}
+        <div className={s.zoom}>
+          <button type="button" className={s.zoomBtn} data-tip="Zoom in" onClick={() => zoomBy(1.25)} aria-label="Zoom in">
+            <Plus />
+          </button>
+          <button type="button" className={s.zoomBtn} data-tip="Zoom out" onClick={() => zoomBy(1 / 1.25)} aria-label="Zoom out">
+            <Minus />
+          </button>
+          <button type="button" className={s.zoomPct} data-tip="Reset to 100%" onClick={() => zoomBy(1 / k)} aria-label="Reset zoom to 100%">
+            {Math.round(k * 100)}%
+          </button>
+          <button
+            type="button"
+            className={s.zoomBtn}
+            data-tip="Fit to view · F"
+            onClick={() => {
+              userInteracted();
+              fitRef.current(true);
+            }}
+            aria-label="Fit to view"
+          >
+            <Maximize2 />
+          </button>
+        </div>
       </div>
 
       {selectedWf && (

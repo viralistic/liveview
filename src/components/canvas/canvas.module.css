@@ -105,18 +105,18 @@
 }
 .section:hover .sectionActions, .section[data-selected='true'] .sectionActions { opacity: 1; pointer-events: auto; }
 
-/* ---------- heat hue (very big, very soft; clipped to the company section) ---------- */
-.heatLayer { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+/* ---------- heat hue (very big, very soft; bleeds past the company section) ---------- */
+.heatLayer { position: absolute; inset: 0; pointer-events: none; }
 .heat {
   position: absolute; border-radius: 50%; pointer-events: none;
   background: radial-gradient(
     closest-side,
     var(--heat) 0%,
-    color-mix(in srgb, var(--heat) 82%, transparent) 14%,
-    color-mix(in srgb, var(--heat) 58%, transparent) 32%,
-    color-mix(in srgb, var(--heat) 34%, transparent) 50%,
-    color-mix(in srgb, var(--heat) 16%, transparent) 68%,
-    color-mix(in srgb, var(--heat) 5%, transparent) 86%,
+    color-mix(in srgb, var(--heat) 86%, transparent) 14%,
+    color-mix(in srgb, var(--heat) 64%, transparent) 32%,
+    color-mix(in srgb, var(--heat) 40%, transparent) 50%,
+    color-mix(in srgb, var(--heat) 20%, transparent) 68%,
+    color-mix(in srgb, var(--heat) 7%, transparent) 86%,
     transparent 100%
   );
   opacity: 0; transition: opacity 420ms var(--ease-out);

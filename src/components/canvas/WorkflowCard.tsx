@@ -65,8 +65,11 @@ export const WorkflowCard = memo(function WorkflowCard({ card, origin, wf, compa
   const product = wf.productId ? productById(wf.productId) : undefined;
   const compact = tier === 'tiny' || tier === 'compact';
   const wide = tier === 'mini2' || tier === 'full';
-  const showChips = tier !== 'mini2' && tier !== 'full';
-  // the tag is a real link to the product page; data-ui keeps the canvas from treating the press as a card click
+  // mini bands are ~340px wide: a product tag there costs the chips and the owner avatar
+  const showChips = tier === 'tiny' || tier === 'compact' || (tier === 'mini' && !product);
+  const showOwner = !!owner && !(tier === 'mini' && product);
+  // the tag is a real link to the product page; data-ui keeps the canvas from treating the press as a card click.
+  // Compact cards are ~180px wide at fit zoom, so they carry the purple dot and the tag appears from the mini tier up.
   const tag = product ? (
     <span className={s.tagWrap} data-ui>
       <ProductTag name={product.name} slug={product.slug} size="sm" />
@@ -101,7 +104,7 @@ export const WorkflowCard = memo(function WorkflowCard({ card, origin, wf, compa
           <div className={s.row}>
             <NodeIcon type={wf.trigger.nodeTypeId} size={18} />
             <span className={s.cardName}>{wf.name}</span>
-            {product && (tier === 'tiny' ? <ProductDot /> : tag)}
+            {product && <ProductDot />}
             <span className={s.spacer} />
             <span className={s.statusDot} data-status={status.key} title={status.label} />
           </div>
@@ -125,7 +128,7 @@ export const WorkflowCard = memo(function WorkflowCard({ card, origin, wf, compa
             {showChips && <Chips wf={wf} />}
             <span className={s.spacer} />
             {wide && <span className={s.cardMeta}>{draft ? 'Not deployed yet' : wf.active ? `Last run ${relTime(wf.stats.lastRunAt)}` : `Paused ${relTime(wf.updatedAt)}`}</span>}
-            {owner && <Avatar user={owner} size={18} title={`Owner ${owner.name}`} />}
+            {showOwner && owner && <Avatar user={owner} size={18} title={`Owner ${owner.name}`} />}
           </div>
           {tier === 'full' ? <FullGraph wf={wf} failedNodeIds={failedNodeIds} /> : <MiniGraph wf={wf} failedNodeIds={failedNodeIds} />}
         </>
