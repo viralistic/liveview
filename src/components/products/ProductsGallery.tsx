@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { PRODUCTS, PRODUCT_CATEGORIES } from '../../data/products';
+import { forksOf } from '../../data/forks';
 import type { ProductCategoryId } from '../../data/types';
+import { $userForks, useForkStore } from '../../stores/forks';
 import { PageHeader } from '../pages/shared';
 import { ProductCard } from './ProductCard';
 import s from './products.module.css';
@@ -10,6 +12,7 @@ const isFilter = (v: string | null): v is Filter => v === 'all' || PRODUCT_CATEG
 
 export function ProductsGallery() {
   const [filter, setFilter] = useState<Filter>('all');
+  const userForks = useForkStore($userForks);
 
   // deep links: /products?category=marketing (read after mount so SSR and hydration agree)
   useEffect(() => {
@@ -30,6 +33,7 @@ export function ProductsGallery() {
     ...PRODUCT_CATEGORIES.map((c) => ({ id: c.id, label: c.label, count: PRODUCTS.filter((p) => p.category === c.id).length, title: c.description })),
   ];
   const current = PRODUCT_CATEGORIES.find((c) => c.id === filter);
+  const totalForks = list.reduce((a, p) => a + forksOf(p.id, userForks).length, 0);
 
   return (
     <>
@@ -45,7 +49,7 @@ export function ProductsGallery() {
           ))}
         </div>
         <span className={s.count}>
-          {list.length} {list.length === 1 ? 'product' : 'products'}
+          {list.length} {list.length === 1 ? 'product' : 'products'} · {totalForks} {totalForks === 1 ? 'fork' : 'forks'}
           {current && <span className={s.countSub}> · {current.description}</span>}
         </span>
       </div>

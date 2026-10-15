@@ -14,7 +14,7 @@ import { Card, CardBody, CardFooter, CardHeader } from '../ui/Card';
 import { CompanyMark } from '../ui/CompanyMark';
 import { HealthRing } from '../ui/HealthRing';
 import { IncidentRow } from './IncidentRow';
-import { LATEST_VERSION, RELEASE_VERSIONS, TIER_LABEL, cmpVersion, impactedForCompany, incidentState, incidentsFor, isBehind, partnerOf, pendingUpdates } from './incidents';
+import { LATEST_VERSION, PLAN_LABEL, RELEASE_VERSIONS, TIER_LABEL, cmpVersion, impactedForCompany, incidentState, incidentsFor, isBehind, partnerOf, pendingUpdates } from './incidents';
 import s from '../pages/pages.module.css';
 import v from './vendor.module.css';
 
@@ -258,10 +258,13 @@ function InstanceRow({ company }: { company: Company }) {
           </span>
         </div>
         <div className={v.instanceRowSub}>
-          {fmtInt(company.employees)} people · {company.industry} · {company.country} · {TIER_LABEL[company.supportTier]} support ·{' '}
+          {fmtInt(company.employees)} people · {company.industry} · {company.country}
+        </div>
+        <div className={v.instanceRowSub} style={{ marginTop: 1 }}>
+          {PLAN_LABEL[company.plan]} · {TIER_LABEL[company.supportTier]} support ·{' '}
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
             {company.sensitivity === 'hyper' && <Lock />}
-            {SENSITIVITY_LABEL[company.sensitivity]}
+            {SENSITIVITY_LABEL[company.sensitivity]} sensitivity
           </span>
         </div>
       </div>
@@ -298,7 +301,7 @@ function PlatformRow({ company }: { company: Company }) {
         <div className={v.platformSub}>
           {behind ? (
             <>
-              {pending.length} release{pending.length === 1 ? '' : 's'} behind · {impacted.length} workflow{impacted.length === 1 ? '' : 's'} impacted{breaking ? <> · <b>{breaking} breaking</b></> : ''}
+              {pending.length} release{pending.length === 1 ? '' : 's'} behind · {impacted.length ? `${impacted.length} workflow${impacted.length === 1 ? '' : 's'} impacted` : 'no workflows impacted'}{breaking ? <> · <b>{breaking} breaking</b></> : ''}
               {owner ? ` · ${first(owner.name)} owns the upgrade` : ''}
             </>
           ) : (

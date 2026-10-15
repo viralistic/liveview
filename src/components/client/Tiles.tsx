@@ -31,7 +31,8 @@ type Drop = { id: string; side: 'before' | 'after'; axis: 'x' | 'y' } | null;
 
 const INTERACTIVE = 'a,button,input,select,textarea,[data-grip]';
 
-export function TileGrid({ tiles, order, onReorder, customize = false }: { tiles: TileDef[]; order: string[]; onReorder: (ids: string[]) => void; customize?: boolean }) {
+export function TileGrid({ tiles, order, onReorder, customize = false }: { tiles: TileDef[]; order: string[]; /** without it the grid is static: no handles, no dragging */ onReorder?: (ids: string[]) => void; customize?: boolean }) {
+  const reorderable = !!onReorder;
   const gridRef = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
   const dropRef = useRef<Drop>(null);
@@ -171,12 +172,9 @@ export function TileGrid({ tiles, order, onReorder, customize = false }: { tiles
       const rest = ordered.map((t) => t.id).filter((id) => id !== d.id);
       const at = rest.indexOf(target.id) + (target.side === 'after' ? 1 : 0);
       rest.splice(at, 0, d.id);
-      if (rest.join('|') !== orderKey) {
-        onReorder(rest);
-        return;
-      }
+      if (rest.join('|') !== orderKey) onReorder?.(rest);
     }
-    setFlip((n) => n + 1); // nothing changed: glide back
+    setFlip((n) => n + 1); // one layout pass: glide into the new place, or back
   };
 
   const nudge = (id: string, dir: -1 | 1) => {
@@ -187,7 +185,7 @@ export function TileGrid({ tiles, order, onReorder, customize = false }: { tiles
     prevRects.current = snapshot();
     ids.splice(i, 1);
     ids.splice(j, 0, id);
-    onReorder(ids);
+    onReorder?.(ids);
   };
   const onGripKey = (e: KeyboardEvent<HTMLButtonElement>, id: string) => {
     if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
@@ -200,7 +198,7 @@ export function TileGrid({ tiles, order, onReorder, customize = false }: { tiles
   };
 
   return (
-    <div ref={gridRef} className={s.grid} data-customize={customize ? 'true' : undefined}>
+    <div ref={gridRef} className={s.grid} data-customize={customize && reorderable ? 'true' : undefined}>
       {ordered.map((t) => (
         <section
           key={t.id}
@@ -210,31 +208,33 @@ export function TileGrid({ tiles, order, onReorder, customize = false }: { tiles
           data-dragging={dragging === t.id ? 'true' : undefined}
           aria-label={t.label}
           onPointerDown={
-            customize
+            customize && reorderable
               ? (e) => {
                   if ((e.target as HTMLElement).closest(INTERACTIVE)) return;
                   begin(e, t.id);
                 }
               : undefined
           }
-          onPointerMove={move}
-          onPointerUp={end}
-          onPointerCancel={end}
+          onPointerMove={reorderable ? move : undefined}
+          onPointerUp={reorderable ? end : undefined}
+          onPointerCancel={reorderable ? end : undefined}
         >
-          <button
-            type="button"
-            data-grip="true"
-            className={s.grip}
-            aria-label={`Move ${t.label}`}
-            title="Drag to reorder"
-            onPointerDown={(e) => {
-              e.stopPropagation();
-              begin(e, t.id);
-            }}
-            onKeyDown={(e) => onGripKey(e, t.id)}
-          >
-            <GripVertical />
-          </button>
+          {reorderable && (
+            <button
+              type="button"
+              data-grip="true"
+              className={s.grip}
+              aria-label={`Move ${t.label}`}
+              title="Drag to reorder"
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                begin(e, t.id);
+              }}
+              onKeyDown={(e) => onGripKey(e, t.id)}
+            >
+              <GripVertical />
+            </button>
+          )}
           {t.node}
           {drop?.id === t.id && <span className={s.drop} data-side={drop.side} data-axis={drop.axis} aria-hidden="true" />}
         </section>

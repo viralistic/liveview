@@ -1,7 +1,7 @@
 import { atom, onMount, type WritableAtom } from 'nanostores';
 import type { Issue } from '../data/types';
 import { proposeFix, type FixProposal } from '../data/fixes';
-import { toast } from './session';
+import { registerInitial, toast } from './session';
 
 function persisted<T>(key: string, initial: T): WritableAtom<T> {
   const store = atom<T>(initial);
@@ -25,6 +25,7 @@ function persisted<T>(key: string, initial: T): WritableAtom<T> {
 }
 
 export const $proposals = persisted<FixProposal[]>('lv.fixes', []);
+registerInitial($proposals, []);
 
 export function proposalFor(issueId: string, proposals: FixProposal[]): FixProposal | undefined {
   return proposals.find((p) => p.issueId === issueId && p.status !== 'rejected');

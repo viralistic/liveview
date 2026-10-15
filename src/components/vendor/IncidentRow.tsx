@@ -24,12 +24,12 @@ export function IncidentRow({ inc, signal, selected, onSelect }: { inc: Incident
       <span className={v.routeTag} data-route={company.route}>
         {ROUTE_LABEL[company.route]}
       </span>
-      <span className={v.sep}>·</span>
-      {onSelect ? <b style={{ fontWeight: 450 }}>{wf.name}</b> : <a href={`/workflows/canvas?focus=${wf.id}`}>{wf.name}</a>}
     </div>
   );
   const impact = (
     <div className={v.incidentImpact}>
+      {onSelect ? <b>{wf.name}</b> : <a href={`/workflows/canvas?focus=${wf.id}`}><b>{wf.name}</b></a>}
+      <span>·</span>
       {issue.impact}
       <span>· {relTime(issue.detectedAt)}</span>
     </div>

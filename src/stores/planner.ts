@@ -2,7 +2,7 @@ import { atom, onMount, type WritableAtom } from 'nanostores';
 import { PROJECTS } from '../data/projects';
 import { SEED_TASKS, WORK_END, WORK_START, type Importance, type Task } from '../data/planner';
 import { NOW } from '../lib/format';
-import { toast } from './session';
+import { registerInitial, toast } from './session';
 
 function persisted<T>(key: string, initial: T): WritableAtom<T> {
   const store = atom<T>(initial);
@@ -26,6 +26,7 @@ function persisted<T>(key: string, initial: T): WritableAtom<T> {
 }
 
 export const $tasks = persisted<Task[]>('lv.tasks', SEED_TASKS);
+registerInitial($tasks, SEED_TASKS);
 export const SEED_TASK_IDS = SEED_TASKS.map((t) => t.id);
 
 /** Busy slots for a person: planned tasks + client calls they attend. */

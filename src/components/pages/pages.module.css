@@ -304,4 +304,26 @@
 .orgTag { display: inline-flex; align-items: center; height: 16px; padding: 0 5px; border-radius: 4px; font-size: 9.5px; font-weight: var(--fw-semibold); letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); background: var(--surface-3); border: 1px solid var(--border); white-space: nowrap; }
 .orgTag[data-kind='n8n'] { color: var(--text); border-color: var(--border-strong); }
 .orgTag[data-kind='external'] { border-style: dashed; }
-.personaLine { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--text-muted); margin-top: 2px; }
+.personaLine { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--text-muted); margin-top: 2px; white-space: nowrap; }
+
+/* ---- phones (v4 mobile pass) ---- */
+@media (max-width: 700px) {
+  .header { flex-direction: column; align-items: stretch; gap: 12px; margin-bottom: 16px; }
+  .actions { flex-wrap: wrap; justify-content: flex-start; }
+  .actions > * { flex: 0 0 auto; }
+  .greeting { font-size: clamp(30px, 9.5vw, 40px) !important; line-height: 1.05; }
+  .h1 { font-size: var(--fs-xl); }
+  .eyebrow { flex-wrap: wrap; row-gap: 4px; }
+  .profileChips { flex-wrap: wrap; margin-left: 0; width: 100%; }
+  .managing { flex-wrap: wrap; row-gap: 6px; font-size: var(--fs-sm); }
+  .kpisMin { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid2, .grid3, .companies, .gridCards { grid-template-columns: 1fr; }
+  .roadmap { padding: 12px 10px; }
+  .phase { min-width: 84px; }
+  .companyRow { flex-wrap: wrap; gap: 10px; }
+  .issueRow, .actionRow { grid-template-columns: auto minmax(0, 1fr); }
+  .issueRow .rowAction, .actionRow .rowAction { grid-column: 2; opacity: 1; }
+  .rowAction { opacity: 1; }
+  .hoverCard { display: none; }
+}

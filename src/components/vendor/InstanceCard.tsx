@@ -137,7 +137,7 @@ export function InstanceCard({ company, signals, focus }: { company: Company; si
             <code>n8n {company.n8nVersion}</code>
             {behind ? (
               <>
-                <ArrowUpRight /> Upgrade available · {impacted.length} impacted
+                <ArrowUpRight /> Upgrade available · {impacted.length ? `${impacted.length} impacted` : 'nothing impacted'}
               </>
             ) : (
               'Latest'

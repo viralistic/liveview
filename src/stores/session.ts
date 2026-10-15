@@ -16,6 +16,11 @@ import type { Capability } from '../data/personas';
 /** Values the server rendered with; used as React's server snapshot so hydration never mismatches. */
 const INITIALS = new WeakMap<object, unknown>();
 
+/** Register the server-rendered value of a store created elsewhere, so useStore hydrates without a mismatch. */
+export function registerInitial<T>(store: ReadableAtom<T>, initial: T) {
+  INITIALS.set(store, initial);
+}
+
 function persisted<T>(key: string, initial: T): WritableAtom<T> {
   const store = atom<T>(initial);
   INITIALS.set(store, initial);

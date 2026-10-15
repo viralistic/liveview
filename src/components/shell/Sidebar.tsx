@@ -78,6 +78,15 @@ export function Sidebar({ active, activeCompanyId, activeView, activeVerticalId 
     return () => document.removeEventListener('mousedown', onDoc);
   }, [switcherOpen, workspaceOpen]);
 
+  // /instances#<companyId>: the hash is only known in the browser
+  const [hashCompany, setHashCompany] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    const read = () => setHashCompany(window.location.hash ? window.location.hash.slice(1) : undefined);
+    read();
+    window.addEventListener('hashchange', read);
+    return () => window.removeEventListener('hashchange', read);
+  }, []);
+
   const visibleWfs = visibleWorkflows(user.id, grants);
   const criticalCount = visibleWfs.reduce((a, w) => a + w.issues.filter((i) => i.severity === 'critical').length, 0);
   const myCompany = COMPANIES.find((c) => c.id === user.companyId);
@@ -195,7 +204,7 @@ export function Sidebar({ active, activeCompanyId, activeView, activeVerticalId 
   const renderInstance = (c: (typeof COMPANIES)[number]) => {
     const breaking = visibleWfs.filter((w) => w.companyId === c.id).some((w) => w.issues.some((i) => i.severity === 'critical'));
     return (
-      <a key={c.id} href={`/instances#${c.id}`} className={s.company} aria-current={active === 'instances' && activeCompanyId === c.id ? 'page' : undefined} title={collapsed ? c.name : `${c.name} · ${ROUTE_LABEL[c.route]} · n8n ${c.n8nVersion}`}>
+      <a key={c.id} href={`/instances#${c.id}`} className={s.company} aria-current={active === 'instances' && (activeCompanyId ?? hashCompany) === c.id ? 'page' : undefined} title={collapsed ? c.name : `${c.name} · ${ROUTE_LABEL[c.route]} · n8n ${c.n8nVersion}`}>
         <span className={s.companyMark}>{c.initials}</span>
         <span className={s.companyName}>{c.shortName}</span>
         {breaking && <span className={s.breakingDot} title="Something is breaking" />}

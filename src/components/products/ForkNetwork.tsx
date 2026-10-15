@@ -53,6 +53,8 @@ interface LaneGeo {
   mergePath?: string;
   proposedPath?: string;
   xStart: number;
+  /** x of the fork's own first dot (the branch point on its lane) */
+  xBranch: number;
   xEnd: number;
 }
 
@@ -107,7 +109,7 @@ export function ForkNetwork({ product, commits, forks, version, activeId, onOpen
     const X = (t: number) => PAD_L + (idx.get(t) ?? 0) * step;
     const Y = (laneIndex: number) => TOP + laneIndex * LANE_H + LANE_H / 2;
 
-    const laneGeos: LaneGeo[] = lanes.map((lane, i) => ({ lane, y: Y(i), dotTimes: [], path: '', xStart: PAD_L, xEnd: w - PAD_R }));
+    const laneGeos: LaneGeo[] = lanes.map((lane, i) => ({ lane, y: Y(i), dotTimes: [], path: '', xStart: PAD_L, xBranch: PAD_L, xEnd: w - PAD_R }));
     const mainTimes = asc.map((c) => T(c.at));
     if (asc.length) laneGeos[0]!.xStart = X(mainTimes[0]!);
     laneGeos[0]!.dotTimes = mainTimes;
@@ -132,6 +134,7 @@ export function ForkNetwork({ product, commits, forks, version, activeId, onOpen
       const g = laneGeos[i]!;
       g.dotTimes = o.dots;
       g.xStart = xb;
+      g.xBranch = xc;
       g.xEnd = xEnd;
       g.path = `M${r1(xb)} ${r1(yP)} C${r1(xb + dx)} ${r1(yP)}, ${r1(xc - dx)} ${r1(yF)}, ${r1(xc)} ${r1(yF)} L${r1(xEnd)} ${r1(yF)}`;
       const xTip = Math.max(xc, X(o.tip));
@@ -160,7 +163,7 @@ export function ForkNetwork({ product, commits, forks, version, activeId, onOpen
     }
 
     const h = TOP + lanes.length * LANE_H + BOTTOM;
-    return { asc, lanes, laneGeos, X, h, shownTags, step };
+    return { asc, lanes, laneGeos, X, h, shownTags };
   }, [commits, forks, version, w]);
 
   const { asc, lanes, laneGeos, X, h, shownTags } = geo;
@@ -204,7 +207,6 @@ export function ForkNetwork({ product, commits, forks, version, activeId, onOpen
               <Avatar user={author} size={18} />
               <span className={s.netName}>{f.name}</span>
               <span className={s.netStatusDot} data-status={f.status} aria-hidden="true" />
-              {i === 0 ? null : null}
             </button>
           );
         })}
@@ -223,10 +225,9 @@ export function ForkNetwork({ product, commits, forks, version, activeId, onOpen
                 {g.mergePath && <path className={[s.netPath, s.netMerge].join(' ')} d={g.mergePath} pathLength={1} style={{ '--d': laneDelay + 420 } as CSSProperties} />}
                 {g.proposedPath && <path className={[s.netPath, s.netProposed].join(' ')} d={g.proposedPath} pathLength={1} style={{ '--d': laneDelay + 420 } as CSSProperties} />}
                 {g.dotTimes.map((t, k) => {
-                  const x = k === 0 ? Math.max(X(t), g.xStart + 1) : Math.max(X(t), g.xStart + 1);
-                  const xx = k === 0 ? Math.min(Math.max(x, g.xStart + 6), g.xEnd) : Math.min(x, g.xEnd);
+                  const xx = k === 0 ? g.xBranch : Math.min(Math.max(X(t), g.xBranch), g.xEnd);
                   return (
-                    <circle key={k} className={s.netDot} data-branch={k === 0} cx={r1(k === 0 ? Math.max(xx, X(t) <= g.xStart ? g.xStart + geo.step * 0.9 : X(t)) : xx)} cy={g.y} r={k === 0 ? 3.4 : 3} style={{ '--d': delayFor(i, xx) } as CSSProperties}>
+                    <circle key={k} className={s.netDot} data-branch={k === 0} cx={r1(xx)} cy={g.y} r={k === 0 ? 3.4 : 3} style={{ '--d': delayFor(i, xx) } as CSSProperties}>
                       <title>{k === 0 ? `Forked ${relTime(f.createdAt)} by ${userById(f.authorId).name.split(' ')[0]}` : `Commit ${k} of ${f.commitsAhead} ahead`}</title>
                     </circle>
                   );

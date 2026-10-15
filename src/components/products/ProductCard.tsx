@@ -1,11 +1,13 @@
 import type { CSSProperties } from 'react';
-import { Box } from 'lucide-react';
+import { Box, GitFork, Star } from 'lucide-react';
 import type { Product } from '../../data/types';
 import { companyById } from '../../data/companies';
 import { productCategory } from '../../data/products';
 import { canSeeCompany } from '../../lib/access';
 import { useSession } from '../../stores/session';
+import { useProductSummary } from '../../stores/forks';
 import { CompanyMark } from '../ui/CompanyMark';
+import { Tooltip } from '../ui/Tooltip';
 import { LiveGraph } from './LiveGraph';
 import s from './products.module.css';
 
@@ -18,18 +20,44 @@ export function productCompanyIds(product: Product): string[] {
 
 export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
   const { userId, grants } = useSession();
+  const { forkCount, forkNames, version, stars } = useProductSummary(product);
   const companyIds = productCompanyIds(product);
   const visible = companyIds.filter((id) => canSeeCompany(userId, id, grants));
   const hidden = companyIds.length - visible.length;
   const category = productCategory(product.category);
   const usedTitle = visible.map((id) => companyById(id).shortName).join(', ') + (hidden ? ` and ${hidden} more` : '');
+  const forkTip = (
+    <span className={s.tipList}>
+      <span className={s.tipLine}>
+        <b>{forkCount === 0 ? 'No forks yet' : `${forkCount} ${forkCount === 1 ? 'fork' : 'forks'}`}</b>
+      </span>
+      {forkNames.slice(0, 6).map((n) => (
+        <span key={n} className={s.tipLine}>
+          {n}
+        </span>
+      ))}
+      {forkNames.length > 6 && <span className={s.tipLine}>and {forkNames.length - 6} more</span>}
+    </span>
+  );
 
   return (
     <a href={`/products/${product.slug}`} className={s.card} style={{ '--i': index } as CSSProperties} aria-label={`${product.name} · ${product.tagline}`}>
       <div className={s.cardTop}>
         <span className={s.cardEyebrow}>{category.label}</span>
-        <span className={s.version} title={`Version ${product.version}`}>
-          <Box />v{product.version}
+        <span className={s.cardStats}>
+          <Tooltip label={forkTip}>
+            <span className={s.cardStat} aria-label={`${forkCount} forks`}>
+              <GitFork />
+              {forkCount}
+            </span>
+          </Tooltip>
+          <span className={s.cardStat} title={`${stars} stars`}>
+            <Star />
+            {stars}
+          </span>
+          <span className={s.version} title={`Version ${version}`}>
+            <Box />v{version}
+          </span>
         </span>
       </div>
       <div className={s.cardGraph}>

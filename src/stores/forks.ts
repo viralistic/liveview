@@ -81,13 +81,15 @@ export function useProductForks(product: Product) {
   }, [product, userForks, overrides, merges, stars]);
 }
 
-/** Fork count of a product, for cards (seeded plus user-created). */
-export function useForkCount(productId: string): { count: number; names: string[] } {
+/** What a product card shows: fork count and names, version after merges, stars. */
+export function useProductSummary(product: Product): { forkCount: number; forkNames: string[]; version: number; stars: number } {
   const userForks = useForkStore($userForks);
+  const merges = useForkStore($merges);
+  const stars = useForkStore($forkStars);
   return useMemo(() => {
-    const forks = forksOf(productId, userForks);
-    return { count: forks.length, names: forks.map((f) => f.name) };
-  }, [productId, userForks]);
+    const forks = forksOf(product.id, userForks);
+    return { forkCount: forks.length, forkNames: forks.map((f) => f.name), version: productVersion(product, merges), stars: product.repo.stars + (stars.includes(starKey('product', product.id)) ? 1 : 0) };
+  }, [product, userForks, merges, stars]);
 }
 
 export function toggleStar(key: string) {

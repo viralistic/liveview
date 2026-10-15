@@ -74,7 +74,7 @@ export function RolesMatrix({ users }: { users: User[] }) {
                               {p.label}
                               {p.id === mine.id && <span className={s.rmYou}>you</span>}
                             </b>
-                            <span>{p.description.split('. ')[0]}.</span>
+                            <span>{p.description.split('. ')[0]!.replace(/\.$/, '')}.</span>
                           </div>
                         </td>
                         <td className={s.rmPeople}>{holders.length ? <AvatarGroup users={holders} size={20} max={4} /> : <span className={s.subtle}>none here</span>}</td>

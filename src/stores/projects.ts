@@ -1,7 +1,7 @@
 import { atom, onMount, type WritableAtom } from 'nanostores';
 import { COMPANIES } from '../data/companies';
 import { defaultSettings, type ProjectSettings } from '../data/settings';
-import { toast } from './session';
+import { registerInitial, toast } from './session';
 
 function persisted<T>(key: string, initial: T): WritableAtom<T> {
   const store = atom<T>(initial);
@@ -26,6 +26,7 @@ function persisted<T>(key: string, initial: T): WritableAtom<T> {
 
 /** Overrides per project (companyId or new project id) on top of the defaults. */
 export const $projectSettings = persisted<Record<string, Partial<ProjectSettings>>>('lv.projectSettings', {});
+registerInitial($projectSettings, {});
 
 /** Projects created in the demo with the "+" wizard. They exist only here. */
 export interface NewProject {
@@ -36,6 +37,7 @@ export interface NewProject {
   settings: ProjectSettings;
 }
 export const $newProjects = persisted<NewProject[]>('lv.newProjects', []);
+registerInitial($newProjects, []);
 
 export function settingsFor(projectId: string, overrides: Record<string, Partial<ProjectSettings>>, newProjects: NewProject[]): ProjectSettings | null {
   const company = COMPANIES.find((c) => c.id === projectId);
