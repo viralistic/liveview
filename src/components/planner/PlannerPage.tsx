@@ -1,3 +1,4 @@
+import { NoAccess } from '../shell/NoAccess';
 import { useMemo, useState } from 'react';
 import { Check, Inbox, Plus, Sparkles } from 'lucide-react';
 import { COMPANIES, IMPORTANCE_LABEL, PROJECTS, USERS, WORKFLOWS, type Task } from '../../data';
@@ -36,7 +37,14 @@ interface CalEvent {
 }
 
 /** Your week: client calls from the project log and tasks that were planned for you. Low-importance asks wait in the inbox. */
+/** Gate first, so the inner component keeps a stable hook order. */
 export function PlannerPage() {
+  const { can } = useSession();
+  if (!can('plan')) return <NoAccess cap="plan" />;
+  return <PlannerPageInner />;
+}
+
+function PlannerPageInner() {
   const { user: me, grants } = useSession();
   const tasks = useStore($tasks);
   const [personId, setPersonId] = useState(me.id);

@@ -1,0 +1,16 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import { VERTICALS } from '../../data/verticals';
+import { COMPANIES } from '../../data/companies';
+import { TeamPage } from '../../components/client/TeamPage';
+
+export function getStaticPaths() {
+  return VERTICALS.map((v) => ({ params: { vertical: v.id }, props: { vertical: v } }));
+}
+const { vertical } = Astro.props;
+const company = COMPANIES.find((c) => c.id === vertical.companyId)!;
+---
+
+<AppShell title={`${vertical.name} · ${company.shortName}`} active="teams" activeVerticalId={vertical.id} activeCompanyId={company.id} crumbs={[{ label: 'Teams', href: '/teams' }, { label: vertical.name }]} shareScope={{ kind: 'company', companyId: company.id }} context={{ companyId: company.id }}>
+  <TeamPage client:load verticalId={vertical.id} />
+</AppShell>

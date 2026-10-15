@@ -9,6 +9,9 @@ import type { Grant, Role, Scope } from '../data/types';
 import { INITIAL_GRANTS, USERS, userById } from '../data/users';
 import { COMPANIES } from '../data/companies';
 import { sameScope, visibleCompanies, visibleWorkflows } from '../lib/access';
+import { personaOf } from '../lib/persona';
+import { orgOfUser } from '../data/orgs';
+import type { Capability } from '../data/personas';
 
 /** Values the server rendered with; used as React's server snapshot so hydration never mismatches. */
 const INITIALS = new WeakMap<object, unknown>();
@@ -64,15 +67,39 @@ export function useStore<T>(store: ReadableAtom<T>): T {
 export function useSession() {
   const userId = useStore($currentUserId);
   const grants = useStore($grants);
-  return useMemo(
-    () => ({
+  return useMemo(() => {
+    const user = userById(userId) ?? USERS[0]!;
+    const persona = personaOf(user);
+    return {
       userId,
-      user: userById(userId) ?? USERS[0]!,
+      user,
       grants,
+      persona,
+      org: orgOfUser(user),
+      /** persona capability check: what this kind of person may do in LiveView */
+      can: (cap: Capability) => persona.capabilities.includes(cap),
       visibleWorkflows: visibleWorkflows(userId, grants),
       visibleCompanies: visibleCompanies(userId, grants),
-    }),
-    [userId, grants],
+    };
+  }, [userId, grants]);
+}
+
+/** Mobile: the sidebar becomes a drawer, opened from the topbar or the tab bar. */
+export const $mobileNav = atom<boolean>(false);
+export const openMobileNav = () => $mobileNav.set(true);
+export const closeMobileNav = () => $mobileNav.set(false);
+
+/** True under the mobile breakpoint; false on the server and during hydration. */
+export function useIsMobile(query = '(max-width: 900px)'): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      if (typeof window === 'undefined') return () => {};
+      const mq = window.matchMedia(query);
+      mq.addEventListener('change', cb);
+      return () => mq.removeEventListener('change', cb);
+    },
+    () => (typeof window === 'undefined' ? false : window.matchMedia(query).matches),
+    () => false,
   );
 }
 
@@ -135,4 +162,14 @@ export function resetDemo() {
   $pinned.set(COMPANIES.filter((c) => c.defaultPinned).map((c) => c.id));
   $currentUserId.set('u-marrallisa');
   toast('Demo data reset');
+  // every other store (planner, fixes, signals, projects, forks, tiles) lives under lv.*; wipe and reload
+  if (typeof window !== 'undefined') {
+    try {
+      const keep = new Set(['lv.theme', 'lv.sidebar']);
+      for (const k of Object.keys(window.localStorage)) if (k.startsWith('lv.') && !keep.has(k)) window.localStorage.removeItem(k);
+    } catch {
+      /* ignore */
+    }
+    setTimeout(() => window.location.assign('/'), 350);
+  }
 }

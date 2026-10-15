@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Bell, Building2, ChevronRight, Monitor, Moon, Search, Share2, Sun, Waypoints, Workflow, Users as UsersIcon, KeyRound, LayoutDashboard } from 'lucide-react';
+import { Bell, Building2, ChevronRight, Menu, Monitor, Moon, Search, Share2, Sun, Waypoints, Workflow, Users as UsersIcon, KeyRound, LayoutDashboard } from 'lucide-react';
 import type { Scope } from '../../data/types';
 import { COMPANIES, USERS, WORKFLOWS } from '../../data';
-import { openShare, useSession, $theme, applyTheme, cycleTheme, useStore } from '../../stores/session';
+import { openShare, openMobileNav, useSession, $theme, applyTheme, cycleTheme, useStore } from '../../stores/session';
 import { canSeeCompany, canSeeWorkflow, roleForScope, canManage } from '../../lib/access';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -55,6 +55,9 @@ export function Topbar({ crumbs, shareScope, context }: { crumbs: Crumb[]; share
 
   return (
     <header className={s.topbar}>
+      <button type="button" className={s.menuBtn} onClick={openMobileNav} aria-label="Open menu">
+        <Menu />
+      </button>
       <nav className={s.crumbs} aria-label="Breadcrumb">
         {crumbs.slice(0, -1).map((c, i) => (
           <span key={i} style={{ display: 'contents' }}>
@@ -89,7 +92,7 @@ export function Topbar({ crumbs, shareScope, context }: { crumbs: Crumb[]; share
         </div>
         <Button variant="primary" onClick={() => openShare(scope)}>
           <Share2 />
-          {shareLabel}
+          <span className={s.shareLabel}>{shareLabel}</span>
         </Button>
         <Tooltip label={theme === 'system' ? 'Theme: system' : theme === 'dark' ? 'Theme: dark' : 'Theme: light'} side="bottom">
           <button type="button" className={s.iconBtn} aria-label="Switch theme" onClick={cycleTheme}>
@@ -109,21 +112,27 @@ export function Topbar({ crumbs, shareScope, context }: { crumbs: Crumb[]; share
 
 function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [q, setQ] = useState('');
-  const { user } = useSession();
-  const { grants } = useSession();
+  const { user, grants, persona } = useSession();
   useEffect(() => {
     if (open) setQ('');
   }, [open]);
   const items = useMemo(() => {
     const ql = q.trim().toLowerCase();
+    const nav = persona.nav;
     const pages = [
-      { group: 'Pages', label: 'Overview', href: '/', icon: <LayoutDashboard size={15} /> },
-      { group: 'Pages', label: 'All workflows', href: '/workflows', icon: <Waypoints size={15} /> },
-      { group: 'Pages', label: 'Canvas view', href: '/workflows/canvas', icon: <Waypoints size={15} /> },
-      { group: 'Pages', label: 'Graph view', href: '/workflows/graph', icon: <Waypoints size={15} /> },
-      { group: 'Pages', label: 'Users & access', href: '/users', icon: <UsersIcon size={15} /> },
-      { group: 'Pages', label: 'Credentials', href: '/credentials', icon: <KeyRound size={15} /> },
-    ];
+      { group: 'Pages', label: 'Overview', href: '/', icon: <LayoutDashboard size={15} />, show: true },
+      { group: 'Pages', label: 'All workflows', href: '/workflows', icon: <Waypoints size={15} />, show: nav.includes('workflows') },
+      { group: 'Pages', label: 'Canvas view', href: '/workflows/canvas', icon: <Waypoints size={15} />, show: nav.includes('workflows') },
+      { group: 'Pages', label: 'Graph view', href: '/workflows/graph', icon: <Waypoints size={15} />, show: nav.includes('workflows') },
+      { group: 'Pages', label: 'Planner', href: '/planner', icon: <LayoutDashboard size={15} />, show: nav.includes('planner') },
+      { group: 'Pages', label: 'Teams', href: '/teams', icon: <UsersIcon size={15} />, show: nav.includes('teams') },
+      { group: 'Pages', label: 'Incidents', href: '/incidents', icon: <LayoutDashboard size={15} />, show: nav.includes('incidents') },
+      { group: 'Pages', label: 'Instances', href: '/instances', icon: <LayoutDashboard size={15} />, show: nav.includes('instances') },
+      { group: 'Pages', label: 'Products', href: '/products', icon: <LayoutDashboard size={15} />, show: nav.includes('products') },
+      { group: 'Pages', label: 'Changelog', href: '/changelog', icon: <LayoutDashboard size={15} />, show: nav.includes('changelog') },
+      { group: 'Pages', label: 'Users & access', href: '/users', icon: <UsersIcon size={15} />, show: nav.includes('users') },
+      { group: 'Pages', label: 'Credentials', href: '/credentials', icon: <KeyRound size={15} />, show: nav.includes('credentials') },
+    ].filter((p) => p.show);
     const companies = COMPANIES.filter((c) => canSeeCompany(user.id, c.id, grants)).map((c) => ({ group: 'Companies', label: c.name, href: `/companies/${c.slug}`, icon: <Building2 size={15} /> }));
     const wfs = WORKFLOWS.filter((w) => canSeeWorkflow(user.id, w, grants)).map((w) => ({
       group: 'Workflows',
@@ -134,7 +143,7 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
     }));
     const all = [...pages, ...companies, ...wfs] as { group: string; label: string; href: string; icon: React.ReactNode; hint?: string }[];
     return ql ? all.filter((i) => i.label.toLowerCase().includes(ql) || i.hint?.toLowerCase().includes(ql)) : all.slice(0, 14);
-  }, [q, user.id, grants]);
+  }, [q, user.id, grants, persona]);
 
   return (
     <Modal open={open} onClose={onClose} title={<span className="sr-only">Search</span>} width={600}>

@@ -4,7 +4,7 @@ import type { User } from '../../data/types';
 import { openVideo } from '../../stores/session';
 import s from './ui.module.css';
 
-export function Avatar({ user, size = 28, ring, online, title }: { user: User; size?: number; ring?: boolean; online?: boolean; title?: string }) {
+export function Avatar({ user, size = 28, ring, online, title, interactive = true }: { user: User; size?: number; ring?: boolean; online?: boolean; title?: string; /** false renders a plain face (use inside buttons) */ interactive?: boolean }) {
   const face = (
     <span
       className={[s.avatar, ring ? s.avatarRing : '', online ? s.avatarOnline : ''].join(' ')}
@@ -19,7 +19,7 @@ export function Avatar({ user, size = 28, ring, online, title }: { user: User; s
       )}
     </span>
   );
-  if (!user.video) return face;
+  if (!user.video || !interactive) return face;
   return (
     <button
       type="button"

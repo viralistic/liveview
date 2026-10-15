@@ -404,3 +404,16 @@
 /* near-black brand icons would vanish on dark nodes */
 :global(:root[data-theme='dark']) .root [data-darkicon='true'] { color: var(--text); }
 @media (prefers-color-scheme: dark) { :global(:root:not([data-theme='light'])) .root [data-darkicon='true'] { color: var(--text); } }
+
+/* touch: pan with a finger, no page scroll */
+.root { touch-action: none; }
+
+/* ---- phones: keep the floating chrome above the tab bar, the detail panel becomes a sheet ---- */
+@media (max-width: 700px) {
+  .toolbar { bottom: calc(74px + env(safe-area-inset-bottom, 0px)); left: 50%; }
+  .bottomRight { bottom: calc(74px + env(safe-area-inset-bottom, 0px)); right: 12px; }
+  .minimap { display: none; }
+  .topRight { right: 12px; top: 12px; }
+  .viewOnly { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+  .rail { left: 8px; right: 8px; top: 8px; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); width: auto; }
+}

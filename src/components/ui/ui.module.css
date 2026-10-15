@@ -149,3 +149,17 @@
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
 .pulse { animation: pulse-dot 1.6s ease-in-out infinite; }
 .empty { padding: 32px; text-align: center; color: var(--text-muted); font-size: var(--fs-sm); }
+
+/* ---- switch ---- */
+.switch { width: 34px; height: 20px; border-radius: 10px; background: var(--track-strong, var(--neutral-300)); position: relative; transition: background var(--dur-fast); flex: none; cursor: pointer; }
+.switch[aria-checked='true'] { background: var(--primary, #0a0a0a); }
+.switch:disabled { cursor: not-allowed; opacity: 0.55; }
+.switch[data-locked='true'] { opacity: 0.8; }
+.switchKnob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); transition: transform var(--dur-fast) var(--ease-out); display: grid; place-items: center; color: var(--neutral-600); }
+.switchKnob svg { width: 9px; height: 9px; }
+.switch[aria-checked='true'] .switchKnob { transform: translateX(14px); }
+
+@media (max-width: 700px) {
+  .overlay { padding: 0; align-items: end; }
+  .modal { width: 100% !important; max-width: none; max-height: 92vh; border-radius: 18px 18px 0 0; }
+}

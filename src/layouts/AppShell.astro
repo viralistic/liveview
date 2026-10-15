@@ -8,6 +8,8 @@ import { ShareDialog } from '../components/share/ShareDialog';
 import { Toast } from '../components/shell/Toast';
 import { VideoModal } from '../components/shell/VideoModal';
 import { AskComposer } from '../components/planner/AskComposer';
+import { ProjectSettingsDialog } from '../components/projects/ProjectSettingsDialog';
+import { NewProjectDialog } from '../components/projects/NewProjectDialog';
 import type { Scope } from '../data/types';
 
 interface Props {
@@ -16,13 +18,14 @@ interface Props {
   active: NavKey;
   activeCompanyId?: string;
   activeView?: WorkflowView;
+  activeVerticalId?: string;
   crumbs: Crumb[];
   /** full-bleed pages (canvas, graph) manage their own scrolling */
   bleed?: boolean;
   shareScope?: Scope;
   context?: TopbarContext;
 }
-const { title, description = 'Viralistic LiveView: a multiplayer workflow manager for n8n.', active, activeCompanyId, activeView, crumbs, bleed = false, shareScope, context } = Astro.props;
+const { title, description = 'Viralistic LiveView: a multiplayer workflow manager for n8n.', active, activeCompanyId, activeView, activeVerticalId, crumbs, bleed = false, shareScope, context } = Astro.props;
 ---
 
 <!doctype html>
@@ -50,7 +53,7 @@ const { title, description = 'Viralistic LiveView: a multiplayer workflow manage
   </head>
   <body>
     <div class="app" data-collapsed="false">
-      <Sidebar client:load active={active} activeCompanyId={activeCompanyId} activeView={activeView} />
+      <Sidebar client:load active={active} activeCompanyId={activeCompanyId} activeView={activeView} activeVerticalId={activeVerticalId} />
       <div class="main">
         <Topbar client:load crumbs={crumbs} shareScope={shareScope} context={context} />
         {bleed ? (
@@ -63,6 +66,8 @@ const { title, description = 'Viralistic LiveView: a multiplayer workflow manage
     <ShareDialog client:load />
     <VideoModal client:load />
     <AskComposer client:load />
+    <ProjectSettingsDialog client:load />
+    <NewProjectDialog client:load />
     <Toast client:load />
   </body>
 </html>

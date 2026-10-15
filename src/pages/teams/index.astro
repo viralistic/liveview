@@ -1,0 +1,8 @@
+---
+import AppShell from '../../layouts/AppShell.astro';
+import { TeamsPage } from '../../components/client/TeamsPage';
+---
+
+<AppShell title="Teams" active="teams" crumbs={[{ label: 'Teams' }]} shareScope={{ kind: 'org' }}>
+  <TeamsPage client:load />
+</AppShell>

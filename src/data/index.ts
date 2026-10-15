@@ -10,3 +10,8 @@ export * from './products';
 export * from './projects';
 export * from './planner';
 export * from './changelog';
+export * from './orgs';
+export * from './personas';
+export * from './verticals';
+export * from './usage';
+export * from './forks';

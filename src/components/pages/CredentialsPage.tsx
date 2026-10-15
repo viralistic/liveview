@@ -1,3 +1,4 @@
+import { NoAccess } from '../shell/NoAccess';
 import { useMemo, useState } from 'react';
 import { ChevronDown, KeyRound, RefreshCw, Search, TriangleAlert, Workflow as WorkflowIcon } from 'lucide-react';
 import { COMPANIES, CREDENTIALS, USERS, WORKFLOWS } from '../../data';
@@ -14,10 +15,15 @@ import ui from '../ui/ui.module.css';
 import { CompanyChip, PageHeader } from './shared';
 import s from './pages.module.css';
 
+/** Gate first, so the inner component keeps a stable hook order. */
 export function CredentialsPage() {
-  const { user: me } = useSession();
-  const { grants } = useSession();
-  const { visibleWorkflows: visibleWfs } = useSession();
+  const { can } = useSession();
+  if (!can('manage-credentials')) return <NoAccess cap="manage-credentials" />;
+  return <CredentialsPageInner />;
+}
+
+function CredentialsPageInner() {
+  const { user: me, grants, visibleWorkflows: visibleWfs } = useSession();
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('all');
 

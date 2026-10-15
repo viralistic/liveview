@@ -10,3 +10,5 @@ dist-artifact/
 astro.config.lead.mjs
 astro.config.products.mjs
 astro.config.canvas.mjs
+
+astro.config.*.mjs

@@ -1,8 +1,8 @@
 ---
 import AppShell from '../layouts/AppShell.astro';
-import { OverviewPage } from '../components/pages/OverviewPage';
+import { Home } from '../components/pages/Home';
 ---
 
 <AppShell title="Overview" active="overview" crumbs={[{ label: 'Overview' }]} shareScope={{ kind: 'org' }}>
-  <OverviewPage client:load />
+  <Home client:load />
 </AppShell>

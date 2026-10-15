@@ -231,3 +231,15 @@
 .emptyIcon svg { width: 16px; height: 16px; }
 .emptyTitle { font-size: var(--fs-md); font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); }
 .emptySub { font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.5; }
+
+/* touch: pan with a finger, no page scroll */
+.root { touch-action: none; }
+
+/* ---- phones: floating chrome above the tab bar, panel as a sheet ---- */
+@media (max-width: 700px) {
+  .brStack { bottom: calc(74px + env(safe-area-inset-bottom, 0px)); right: 12px; }
+  .legendWrap { bottom: calc(74px + env(safe-area-inset-bottom, 0px)); left: 12px; }
+  .controls { width: min(256px, calc(100vw - 24px)); right: 12px; }
+  .controlsToggle { right: 12px; }
+  .panel { left: 8px; right: 8px; top: 8px; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); width: auto; }
+}

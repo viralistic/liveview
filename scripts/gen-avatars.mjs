@@ -14,6 +14,17 @@ const people = [
   ['u-finn', 'Finn Mulder', 'f2f2f2'],
   ['u-eva', 'Eva Smit', 'fde2ee'],
   ['u-tom', 'Tom Peeters', 'ebebeb'],
+  ['u-nadia', 'Nadia Keller', 'ffe0ea'],
+  ['u-jonas', 'Jonas Weber', 'efefef'],
+  ['u-pieter', 'Pieter van Dijk', 'e9e9e9'],
+  ['u-anouk', 'Anouk Bakker', 'ffe1ea'],
+  ['u-koen', 'Koen Vermeulen', 'f1f1f1'],
+  ['u-ruben', 'Ruben Smits', 'ececec'],
+  ['u-noor', 'Noor El Amrani', 'ffe4ec'],
+  ['u-femke', 'Femke de Vries', 'fde2ee'],
+  ['u-bas', 'Bas Hendriks', 'eeeeee'],
+  ['u-sven', 'Sven Jacobs', 'f3f3f3'],
+  ['u-lars', 'Lars Koning', 'ffe6ee'],
 ];
 mkdirSync('public/avatars', { recursive: true });
 for (const [id, seed, bg] of people) {

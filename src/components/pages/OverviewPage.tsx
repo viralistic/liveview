@@ -1,14 +1,15 @@
 import { useMemo } from 'react';
 import { Activity, ArrowRight, Check, Clock, Lightbulb, LayoutGrid, Focus } from 'lucide-react';
-import { COMPANIES, SEVERITY_RANK, WORKFLOWS, type Issue } from '../../data';
+import { COMPANIES, SEVERITY_RANK, USERS, WORKFLOWS, type Issue } from '../../data';
 import { useSession } from '../../stores/session';
+import { latestSignal, useSignals } from '../../stores/signals';
 import { aggregateSeries, companyHealth, orgHealth } from '../../lib/health';
 import { companyMembers } from '../../lib/access';
 import { fmtCompact, fmtDuration, fmtEuro, fmtInt, fmtPct, greeting, NOW } from '../../lib/format';
 import { Button } from '../ui/Button';
 import { Card, CardBody, CardFooter, CardHeader } from '../ui/Card';
 import { HealthRing } from '../ui/HealthRing';
-import { AvatarGroup } from '../ui/Avatar';
+import { Avatar, AvatarGroup } from '../ui/Avatar';
 import { SeverityIcon } from '../ui/SeverityIcon';
 import { ExportMenu } from './ExportMenu';
 import { ActivityFeed } from './shared';
@@ -228,6 +229,10 @@ export function OverviewPage() {
 function ActionRow({ issue }: { issue: Issue }) {
   const wf = WORKFLOWS.find((w) => w.id === issue.workflowId)!;
   const company = COMPANIES.find((c) => c.id === wf.companyId)!;
+  // n8n may have signalled this finding to the partner (stores/signals.ts)
+  const signals = useSignals();
+  const signal = latestSignal(issue.id, signals);
+  const signalledBy = signal ? USERS.find((u) => u.id === signal.byId) : undefined;
   return (
     <div className={s.actionRow}>
       <SeverityIcon severity={issue.severity} size={13} filled />
@@ -236,6 +241,14 @@ function ActionRow({ issue }: { issue: Issue }) {
         <div className={s.actionSub}>
           {company.shortName} · {wf.name} · {issue.impact}
         </div>
+        {signal && signalledBy && (
+          <div className={s.actionSub} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 5 }} title={signal.note}>
+            <span className={s.chip} style={{ paddingLeft: 3, flex: 'none' }}>
+              <Avatar user={signalledBy} size={14} /> n8n signalled
+            </span>
+            <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{signal.note}</span>
+          </div>
+        )}
       </div>
       <Button size="sm" variant={issue.severity === 'critical' ? 'primary' : 'secondary'} href={`/workflows/canvas?focus=${wf.id}`}>
         {issue.severity === 'critical' ? 'Fix' : 'Open'}

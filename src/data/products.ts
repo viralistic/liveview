@@ -28,6 +28,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'invoice-generator',
     slug: 'invoice-generator',
+    repo: { owner: 'viralistic', name: 'products', path: 'financial/invoice-generator', branch: 'main', stars: 14 },
     name: 'Invoice generator',
     category: 'financial',
     tagline: 'Approved hours become invoices on the first of the month.',
@@ -42,6 +43,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'invoice-checker',
     slug: 'invoice-checker',
+    repo: { owner: 'viralistic', name: 'products', path: 'financial/invoice-checker', branch: 'main', stars: 9 },
     name: 'Invoice checker',
     category: 'financial',
     tagline: 'Incoming supplier invoices read, matched and booked.',
@@ -73,6 +75,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'invoice-dunning',
     slug: 'invoice-dunning',
+    repo: { owner: 'viralistic', name: 'products', path: 'financial/invoice-dunning', branch: 'main', stars: 11 },
     name: 'Invoice dunning',
     category: 'financial',
     tagline: 'Friendly reminder first, firmer SMS a week later.',
@@ -87,6 +90,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'lead-intake',
     slug: 'lead-intake',
+    repo: { owner: 'viralistic', name: 'products', path: 'marketing/lead-intake', branch: 'main', stars: 41 },
     name: 'Lead intake',
     category: 'marketing',
     tagline: 'Every form submission lands enriched in the CRM within seconds.',
@@ -101,6 +105,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'review-requests',
     slug: 'review-requests',
+    repo: { owner: 'viralistic', name: 'products', path: 'marketing/review-requests', branch: 'main', stars: 7 },
     name: 'Review requests',
     category: 'marketing',
     tagline: 'Ask for the review three days after delivery, never twice.',
@@ -115,6 +120,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'social-scheduler',
     slug: 'social-scheduler',
+    repo: { owner: 'viralistic', name: 'products', path: 'marketing/social-scheduler', branch: 'main', stars: 12 },
     name: 'Social scheduler',
     category: 'marketing',
     tagline: 'A content calendar that posts itself.',
@@ -129,6 +135,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'employee-onboarding',
     slug: 'employee-onboarding',
+    repo: { owner: 'viralistic', name: 'products', path: 'hrm/employee-onboarding', branch: 'main', stars: 6 },
     name: 'Employee onboarding',
     category: 'hrm',
     tagline: 'From signed contract to first-day calendar in one go.',
@@ -156,6 +163,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'leave-requests',
     slug: 'leave-requests',
+    repo: { owner: 'viralistic', name: 'products', path: 'hrm/leave-requests', branch: 'main', stars: 4 },
     name: 'Leave request approval',
     category: 'hrm',
     tagline: 'Approve leave from Slack, logged automatically.',
@@ -185,6 +193,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'error-alerts',
     slug: 'error-alerts',
+    repo: { owner: 'viralistic', name: 'products', path: 'common/error-alerts', branch: 'main', stars: 23 },
     name: 'Error alerts',
     category: 'common',
     tagline: 'Every failing execution, formatted, in one channel.',
@@ -199,6 +208,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'ssl-expiry',
     slug: 'ssl-expiry',
+    repo: { owner: 'viralistic', name: 'products', path: 'common/ssl-expiry', branch: 'main', stars: 8 },
     name: 'Certificate watch',
     category: 'common',
     tagline: 'Warns 14 days before a certificate expires.',
@@ -213,6 +223,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'support-triage',
     slug: 'support-triage',
+    repo: { owner: 'viralistic', name: 'products', path: 'common/support-triage', branch: 'main', stars: 17 },
     name: 'Support triage',
     category: 'common',
     tagline: 'Every support email classified and ticketed before anyone reads it.',
@@ -227,6 +238,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'client-report',
     slug: 'client-report',
+    repo: { owner: 'viralistic', name: 'products', path: 'common/client-report', branch: 'main', stars: 10 },
     name: 'Weekly client report',
     category: 'common',
     tagline: 'Monday 07:00, every client has a PDF in their inbox.',

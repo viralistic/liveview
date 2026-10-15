@@ -1,8 +1,11 @@
+import { useMemo } from 'react';
 import { Crown, Eye, MessageSquareText, Pencil, ShieldCheck, UserPlus, Users as UsersIcon, Minus } from 'lucide-react';
-import { COMPANIES, ROLE_LABEL, USERS, WORKFLOWS, type Role } from '../../data';
+import { COMPANIES, ROLE_LABEL, USERS, WORKFLOWS, orgOfUser, type Role, type User } from '../../data';
 import { openShare, useSession } from '../../stores/session';
-import { accessSummary, highestRole, isOrgAdmin, roleForCompany, canSeeCompany, roleForWorkflow } from '../../lib/access';
+import { accessSummary, highestRole, isOrgAdmin, roleForCompany, canSeeCompany, roleForWorkflow, usersWithAccess } from '../../lib/access';
+import { personaOf } from '../../lib/persona';
 import { relTime } from '../../lib/format';
+import { RolesMatrix } from './RolesMatrix';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -14,10 +17,27 @@ import s from './pages.module.css';
 
 const ROLE_ICON: Record<Role, React.ReactNode> = { admin: <Crown />, editor: <Pencil />, commenter: <MessageSquareText />, viewer: <Eye /> };
 
+/** Small tag for the kind of organization someone belongs to. */
+function kindOf(u: User): 'n8n' | 'partner' | 'client' | 'external' {
+  if (u.persona === 'external-dev') return 'external';
+  const kind = orgOfUser(u).kind;
+  return kind === 'vendor' ? 'n8n' : kind;
+}
+
 export function UsersPage() {
-  const { user: me } = useSession();
-  const { grants } = useSession();
+  const { user: me, grants, persona, visibleCompanies } = useSession();
   const admin = isOrgAdmin(me.id, grants);
+  /** Vendor and partner personas see everyone; a client sees its own people plus the partner people who have access to its company. */
+  const people = useMemo(() => {
+    if (persona.org !== 'client') return USERS;
+    const partnerIds = new Set(
+      usersWithAccess({ kind: 'company', companyId: me.companyId }, grants)
+        .filter((e) => orgOfUser(e.user).kind === 'partner')
+        .map((e) => e.user.id),
+    );
+    return USERS.filter((u) => u.companyId === me.companyId || partnerIds.has(u.id));
+  }, [persona.org, me.companyId, grants]);
+  const columns = visibleCompanies;
 
   return (
     <>
@@ -39,7 +59,7 @@ export function UsersPage() {
 
       <div className={s.stack}>
         <Card>
-          <CardHeader title="People" sub={`${USERS.length} people · ${USERS.filter((u) => u.online).length} online`} icon={<UsersIcon />} />
+          <CardHeader title="People" sub={`${people.length} people · ${people.filter((u) => u.online).length} online${persona.org === 'client' ? ' · your company and the partner people with access to it' : ''}`} icon={<UsersIcon />} />
           <CardBody flush>
             <table className={ui.table}>
               <thead>
@@ -53,27 +73,33 @@ export function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {USERS.map((u) => {
+                {people.map((u) => {
                   const r = highestRole(u.id, grants);
                   const chips = accessSummary(u.id, grants);
-                  const employer = COMPANIES.find((c) => c.id === u.companyId);
+                  const employer = orgOfUser(u);
+                  const kind = kindOf(u);
                   return (
                     <tr key={u.id}>
                       <td>
                         <div className={s.personCell}>
                           <Avatar user={u} size={32} online={u.online} />
                           <div>
-                            <div className={s.personName}>
+                            <div className={s.personName} title={u.email}>
                               {u.name}
                               {u.id === me.id && <span className={s.subtle} style={{ fontWeight: 450 }}>· you</span>}
                               {isOrgAdmin(u.id, grants) && <Badge tone="dark" size="sm">Owner</Badge>}
                             </div>
-                            <div className={s.personSub}>{u.email}</div>
+                            <div className={s.personaLine}>
+                              <span className={s.orgTag} data-kind={kind}>
+                                {kind}
+                              </span>
+                              {personaOf(u).label}
+                            </div>
                           </div>
                         </div>
                       </td>
                       <td>
-                        <div style={{ fontSize: 'var(--fs-sm)' }}>{employer?.shortName}</div>
+                        <div style={{ fontSize: 'var(--fs-sm)' }}>{employer.shortName}</div>
                         <div className={s.personSub}>{u.title}</div>
                       </td>
                       <td>{r ? <Badge tone={r === 'admin' ? 'dark' : 'outline'}>{ROLE_LABEL[r]}</Badge> : <span className={s.subtle}>No access</span>}</td>
@@ -115,6 +141,8 @@ export function UsersPage() {
           </CardBody>
         </Card>
 
+        <RolesMatrix users={people} />
+
         <div className={s.grid2}>
           <Card>
             <CardHeader title="Access matrix" sub="Who can do what, per company. Dashed cells mean access to some workflows only. Click a cell to manage that company." icon={<ShieldCheck />} />
@@ -123,7 +151,7 @@ export function UsersPage() {
                 <thead>
                   <tr>
                     <th>Person</th>
-                    {COMPANIES.map((c) => (
+                    {columns.map((c) => (
                       <th key={c.id}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <span className={s.chipDot} style={{ background: c.color }} />
@@ -134,7 +162,7 @@ export function UsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {USERS.map((u) => (
+                  {people.map((u) => (
                     <tr key={u.id}>
                       <td>
                         <span className={s.personCell}>
@@ -142,7 +170,7 @@ export function UsersPage() {
                           <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 500 }}>{u.name}</span>
                         </span>
                       </td>
-                      {COMPANIES.map((c) => {
+                      {columns.map((c) => {
                         const role = roleForCompany(u.id, c.id, grants);
                         const partial = !role && canSeeCompany(u.id, c.id, grants);
                         const partialCount = partial ? WORKFLOWS.filter((w) => w.companyId === c.id && roleForWorkflow(u.id, w, grants)).length : 0;

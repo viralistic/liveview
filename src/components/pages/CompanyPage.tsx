@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
-import { Activity, AtSign, Check, Flame, KeyRound, LayoutGrid, Mail, MessageSquare, Phone, Pin, Share2, ShieldCheck, Sparkles, Users as UsersIcon, Video } from 'lucide-react';
-import { ACTIVITY, COMPANIES, CREDENTIALS, PHASES, ROLE_LABEL, SEVERITY_RANK, USERS, WORKFLOWS, phaseIndex, projectFor, type Communication } from '../../data';
+import { Activity, AtSign, Check, Flame, KeyRound, LayoutGrid, Lock, Mail, MessageSquare, Phone, Pin, Settings2, Share2, ShieldCheck, Sparkles, Users as UsersIcon, Video } from 'lucide-react';
+import { ACTIVITY, COMPANIES, CREDENTIALS, PHASES, ROLE_LABEL, ROUTE_LABEL, SENSITIVITY_LABEL, SEVERITY_RANK, SIZE_LABEL, USERS, WORKFLOWS, phaseIndex, projectFor, type Communication } from '../../data';
 import { useSession, openShare } from '../../stores/session';
 import { openAsk } from '../../stores/planner';
+import { openProjectSettings } from '../../stores/projects';
 import { canManage, canSeeWorkflow, companyMembers, roleForCompany, scopeLabel } from '../../lib/access';
 import { aggregateSeries, companyHealth, workflowHealth } from '../../lib/health';
 import { fmtCompact, fmtInt, fmtPct, relTime } from '../../lib/format';
@@ -64,6 +65,15 @@ export function CompanyPage({ companyId }: { companyId: string }) {
         <div style={{ minWidth: 0 }}>
           <div className={s.eyebrow}>
             {company.industry} · {company.city}
+            <span className={s.profileChips}>
+              <span className={s.chip} title="Company size">{SIZE_LABEL[company.size]}</span>
+              <span className={s.chip} title="People">{fmtInt(company.employees)} people</span>
+              <span className={s.chip} title="How n8n is hosted">{ROUTE_LABEL[company.route]}</span>
+              <span className={s.chip} title="Information sensitivity">
+                {company.sensitivity === 'hyper' && <Lock size={10} />}
+                {SENSITIVITY_LABEL[company.sensitivity]}
+              </span>
+            </span>
           </div>
           <h1 className={s.greeting} style={{ fontSize: 40 }}>
             {company.name}
@@ -78,6 +88,9 @@ export function CompanyPage({ companyId }: { companyId: string }) {
           )}
         </div>
         <div className={s.actions}>
+          <Button variant="secondary" onClick={() => openProjectSettings(companyId)} aria-label="Project settings" title="Project settings" icon>
+            <Settings2 />
+          </Button>
           {canManage(myRole) && (
             <Button variant="secondary" onClick={() => openShare({ kind: 'company', companyId })}>
               <Share2 /> Access

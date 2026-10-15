@@ -28,6 +28,8 @@ export interface GraphPreset {
 
 export const CARD_PRESET: GraphPreset = { node: 34, colPitch: 56, rowPitch: 66, pad: 14, labelSize: 10.5, labelW: 54, portGap: 7, stroke: 1.25, dotR: 3, connLabels: false };
 export const LARGE_PRESET: GraphPreset = { node: 56, colPitch: 128, rowPitch: 108, pad: 40, labelSize: 12.5, labelW: 116, portGap: 14, stroke: 1.5, dotR: 4.5, connLabels: true };
+/** fork drawer: between card and large, with connection labels */
+export const MEDIUM_PRESET: GraphPreset = { node: 44, colPitch: 96, rowPitch: 88, pad: 28, labelSize: 11.5, labelW: 92, portGap: 10, stroke: 1.5, dotR: 4, connLabels: true };
 
 export interface Pt {
   x: number;

@@ -11,6 +11,7 @@
  * graph.
  */
 import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { Plus, Replace } from 'lucide-react';
 import type { WfConnection, WfNode } from '../../data/types';
 import { nodeType } from '../../data/nodeTypes';
 import { NodeIcon } from '../ui/NodeIcon';
@@ -26,7 +27,10 @@ const RING = 0.7; // node pulse
 const FADE = 0.55; // purple trail fading back to grey
 const PAUSE = 1.7; // rest between runs
 
-export function LiveGraph({ nodes, connections, variant = 'card', maxHeight, preset: presetProp, className }: { nodes: WfNode[]; connections: WfConnection[]; variant?: 'card' | 'large'; maxHeight?: number; preset?: GraphPreset; className?: string }) {
+/** How a node differs from the product it was forked from (purple marks in the fork drawer). */
+export type NodeMark = 'swapped' | 'added' | 'inherited';
+
+export function LiveGraph({ nodes, connections, variant = 'card', maxHeight, preset: presetProp, className, changed }: { nodes: WfNode[]; connections: WfConnection[]; variant?: 'card' | 'large'; maxHeight?: number; preset?: GraphPreset; className?: string; /** node id -> mark, for fork variants */ changed?: Record<string, NodeMark> }) {
   const preset = presetProp ?? (variant === 'large' ? LARGE_PRESET : CARD_PRESET);
   const layout = useMemo(() => layoutGraph(nodes, connections, preset), [nodes, connections, preset]);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -147,11 +151,17 @@ export function LiveGraph({ nodes, connections, variant = 'card', maxHeight, pre
           const def = nodeType(ln.node.type);
           const dark = isDarkColor(def.color);
           const style = { '--x': ln.x, '--y': ln.y, '--r': ln.isTrigger ? 17 : 10, '--rl': ln.isTrigger ? 17 : 10 } as CSSProperties;
+          const mark = changed?.[ln.node.id];
           return (
-            <div key={ln.node.id} className={s.node} style={style} data-node={ln.node.id} data-trigger={ln.isTrigger} data-disabled={!!ln.node.disabled}>
+            <div key={ln.node.id} className={s.node} style={style} data-node={ln.node.id} data-trigger={ln.isTrigger} data-disabled={!!ln.node.disabled} data-changed={mark}>
               <div className={s.nodeBox} data-trigger={ln.isTrigger}>
-                <NodeIcon type={ln.node.type} size={p.node} title={`${ln.node.name} · ${def.label}`} style={{ width: '100%', height: '100%', borderRadius: 'inherit', color: dark ? 'var(--text)' : undefined }} />
+                <NodeIcon type={ln.node.type} size={p.node} title={`${ln.node.name} · ${def.label}${mark ? ` · ${mark === 'added' ? 'added in this fork' : mark === 'swapped' ? 'swapped in this fork' : 'changed in a parent fork'}` : ''}`} style={{ width: '100%', height: '100%', borderRadius: 'inherit', color: dark ? 'var(--text)' : undefined }} />
                 <span className={s.ring} aria-hidden="true" />
+                {mark && (
+                  <span className={s.changeMark} data-kind={mark} aria-hidden="true">
+                    {mark === 'added' ? <Plus /> : <Replace />}
+                  </span>
+                )}
               </div>
               <div className={s.nodeLabel}>{ln.node.name}</div>
             </div>

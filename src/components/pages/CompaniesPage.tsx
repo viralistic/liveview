@@ -1,4 +1,7 @@
-import { ArrowUpRight, Check, Focus } from 'lucide-react';
+import { ArrowUpRight, Check, Focus, Plus, Settings2 } from 'lucide-react';
+import { ROUTE_LABEL, SIZE_LABEL } from '../../data';
+import { $newProjects, openNewProject, openProjectSettings } from '../../stores/projects';
+import { useStore } from '../../stores/session';
 import { useSession } from '../../stores/session';
 import { aggregateSeries, companyHealth } from '../../lib/health';
 import { companyMembers } from '../../lib/access';
@@ -12,10 +15,21 @@ import s from './pages.module.css';
 
 /** The companies you manage. Quiet unless something is breaking. */
 export function CompaniesPage() {
-  const { grants, visibleWorkflows: wfs, visibleCompanies: companies } = useSession();
+  const { grants, visibleWorkflows: wfs, visibleCompanies: companies, can } = useSession();
+  const newProjects = useStore($newProjects);
   return (
     <>
-      <PageHeader title="Companies" lede={<>{companies.length} you manage. Open one for its own dashboard, or jump straight to its section on the canvas.</>} />
+      <PageHeader
+        title="Companies"
+        lede={<>{companies.length} you manage. Open one for its own dashboard, or jump straight to its section on the canvas.</>}
+        actions={
+          can('manage-access') ? (
+            <Button variant="primary" onClick={openNewProject}>
+              <Plus /> New project
+            </Button>
+          ) : undefined
+        }
+      />
       <Card>
         <CardBody flush>
           <div className={s.companyRows}>
@@ -35,7 +49,7 @@ export function CompaniesPage() {
                       {c.name}
                     </a>
                     <div className={s.actionSub}>
-                      {cWfs.length} workflows · {fmtCompact(runs)} runs this week{failed ? ` · ${fmtInt(failed)} failed` : ''}
+                      {SIZE_LABEL[c.size]} · {fmtInt(c.employees)} people · {ROUTE_LABEL[c.route]} · {cWfs.length} workflows · {fmtCompact(runs)} runs this week{failed ? ` · ${fmtInt(failed)} failed` : ''}
                       {cCritical > 0 && (
                         <>
                           {' · '}
@@ -53,6 +67,9 @@ export function CompaniesPage() {
                     </div>
                   </div>
                   <AvatarGroup users={members.map((m) => m.user)} size={24} max={4} />
+                  <Button size="sm" variant="ghost" onClick={() => openProjectSettings(c.id)} aria-label={`${c.shortName} settings`} icon>
+                    <Settings2 />
+                  </Button>
                   <Button size="sm" variant="secondary" href={`/workflows/canvas?focus=${c.id}`}>
                     <Focus /> Canvas
                   </Button>
@@ -62,6 +79,22 @@ export function CompaniesPage() {
                 </div>
               );
             })}
+            {newProjects.map((p) => (
+              <div key={p.id} className={s.companyRow} style={{ padding: '18px 20px' }}>
+                <HealthRing score={0} size={32} stroke={3} showLabel={false} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <button type="button" className={s.companyRowName} style={{ fontSize: 'var(--fs-lg)', textAlign: 'left' }} onClick={() => openProjectSettings(p.id)}>
+                    {p.settings.name}
+                  </button>
+                  <div className={s.actionSub}>
+                    Onboarding · {SIZE_LABEL[p.settings.size]} · {fmtInt(p.settings.employees)} people · {ROUTE_LABEL[p.settings.route]} · no workflows yet
+                  </div>
+                </div>
+                <Button size="sm" variant="secondary" onClick={() => openProjectSettings(p.id)}>
+                  <Settings2 /> Settings
+                </Button>
+              </div>
+            ))}
           </div>
         </CardBody>
       </Card>

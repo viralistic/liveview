@@ -1,0 +1,8 @@
+---
+import AppShell from '../layouts/AppShell.astro';
+import { IncidentsPage } from '../components/vendor/IncidentsPage';
+---
+
+<AppShell title="Incidents" active="incidents" crumbs={[{ label: 'Incidents' }]} shareScope={{ kind: 'org' }}>
+  <IncidentsPage client:load />
+</AppShell>

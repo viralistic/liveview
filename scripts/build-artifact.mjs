@@ -73,9 +73,12 @@ function rewriteJs(js) {
     if (route === '/') continue;
     js = js.replace(new RegExp('([\'"`])' + route.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&') + '(?=[?"\'`#])', 'g'), '$1./' + file);
   }
-  // dynamic company links: `/companies/${e.slug}` → `./companies/${e.slug}.html`
-  js = js.replace(/`\/companies\/\$\{([^}]+)\}`/g, '`./companies/${$1}.html`');
-  js = js.replace(/"\/companies\/"\.concat\(([^)]+)\)/g, '"./companies/".concat($1,".html")');
+  // dynamic links with a slug: `/companies/${e.slug}` → `./companies/${e.slug}.html` (also products, teams)
+  js = js.replace(/`\/(companies|products|teams)\/\$\{([^}]+)\}`/g, '`./$1/${$2}.html`');
+  js = js.replace(/"\/(companies|products|teams)\/"\.concat\(([^)]+)\)/g, '"./$1/".concat($2,".html")');
+  // dynamic links with a slug and a hash or query: `/instances#${id}` → `./instances.html#${id}`
+  js = js.replace(/`\/(instances|incidents|teams|products|changelog|planner)([#?])\$\{/g, '`./$1.html$2${');
+  js = js.replace(/"\/(instances|incidents|teams|products|changelog|planner)([#?])"\.concat\(/g, '"./$1.html$2".concat(');
   // home links
   js = js.replace(/href:"\/"/g, 'href:"./index.html"');
   js = js.replace(/href:'\/'/g, "href:'./index.html'");
