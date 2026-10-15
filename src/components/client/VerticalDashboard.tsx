@@ -143,7 +143,6 @@ function LiveVertical({ vertical }: { vertical: Vertical }) {
         />
       ),
     },
-    ...kpis.map<TileDef>((k) => ({ id: `kpi:${k.id}`, label: k.label, node: <KpiCard kpi={k} /> })),
     {
       id: 'value',
       span: 2,
@@ -210,6 +209,7 @@ function LiveVertical({ vertical }: { vertical: Vertical }) {
         </>
       ),
     },
+    ...kpis.map<TileDef>((k) => ({ id: `kpi:${k.id}`, label: k.label, node: <KpiCard kpi={k} /> })),
     {
       id: 'board',
       span: 2,

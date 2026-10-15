@@ -27,7 +27,7 @@ export function KpiCard({ kpi, showVertical = false, contribution }: { kpi: Kpi;
         sub={showVertical ? (vertical ? vertical.name : 'Whole company') : undefined}
         action={
           <span className={s.hit} data-hit={hit ? 'true' : undefined} title={hit ? 'Target hit' : `${fmtKpi(kpi, Math.abs(toGo))} to go`}>
-            {hit ? <Check strokeWidth={2.5} /> : `${Math.round(progress * 100)}`}
+            {hit ? <Check strokeWidth={2.5} /> : `${Math.round(progress * 100)}%`}
           </span>
         }
       />

@@ -156,7 +156,7 @@ export function ForkDrawer({ fork, product, all, onClose, onUse, onForkThis, sta
                         <NodeIcon type={d.from!} size={26} />
                         <span className={s.diffText}>
                           <b>{fromDef.label}</b>
-                          <small>{d.name}</small>
+                          <small>{d.fromName ?? d.name}</small>
                         </span>
                       </>
                     ) : (

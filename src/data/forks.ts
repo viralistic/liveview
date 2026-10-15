@@ -671,7 +671,10 @@ export function forkFlow(fork: Fork, all: Fork[] = FORKS): ForkFlow {
 export interface DiffRow {
   kind: 'swapped' | 'added' | 'removed';
   nodeId: string;
+  /** node name after the change */
   name: string;
+  /** node name before the change (differs when the fork renamed it) */
+  fromName?: string;
   from?: string;
   to?: string;
   inherited: boolean;
@@ -681,11 +684,11 @@ export function forkDiff(fork: Fork, all: Fork[] = FORKS): DiffRow[] {
   const chain = [...forkAncestors(fork, all), fork];
   chain.forEach((f, i) => {
     const inherited = i < chain.length - 1;
-    for (const s of f.swaps) rows.push({ kind: 'swapped', nodeId: s.nodeId, name: s.rename ?? s.nodeName, from: s.from, to: s.to, inherited });
+    for (const s of f.swaps) rows.push({ kind: 'swapped', nodeId: s.nodeId, name: s.rename ?? s.nodeName, fromName: s.nodeName, from: s.from, to: s.to, inherited });
     for (const n of f.addedNodes ?? []) rows.push({ kind: 'added', nodeId: n.id, name: n.name, to: n.type, inherited });
     if (f.removedNodeIds?.length) {
       const flow = forkFlow(f, all);
-      for (const n of flow.removed) rows.push({ kind: 'removed', nodeId: n.id, name: n.name, from: n.type, inherited });
+      for (const n of flow.removed) rows.push({ kind: 'removed', nodeId: n.id, name: n.name, fromName: n.name, from: n.type, inherited });
     }
   });
   return rows;

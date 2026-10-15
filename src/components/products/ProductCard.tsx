@@ -1,4 +1,5 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Box, GitFork, Star } from 'lucide-react';
 import type { Product } from '../../data/types';
 import { companyById } from '../../data/companies';
@@ -7,9 +8,30 @@ import { canSeeCompany } from '../../lib/access';
 import { useSession } from '../../stores/session';
 import { useProductSummary } from '../../stores/forks';
 import { CompanyMark } from '../ui/CompanyMark';
-import { Tooltip } from '../ui/Tooltip';
 import { LiveGraph } from './LiveGraph';
 import s from './products.module.css';
+
+/** Hover tip rendered on document.body: the card lifts on hover (a transform), which would clip a fixed tip inside it. */
+function CardTip({ label, children }: { label: ReactNode; children: ReactNode }) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const show = (e: MouseEvent<HTMLSpanElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setPos({ x: r.left + r.width / 2, y: r.top - 8 });
+  };
+  return (
+    <span className={s.cardTipWrap} onMouseEnter={show} onMouseLeave={() => setPos(null)}>
+      {children}
+      {pos &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <span className={s.cardTip} style={{ left: pos.x, top: pos.y }} role="tooltip">
+            {label}
+          </span>,
+          document.body,
+        )}
+    </span>
+  );
+}
 
 /** Unique companies running a product, in instance order. */
 export function productCompanyIds(product: Product): string[] {
@@ -45,12 +67,12 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       <div className={s.cardTop}>
         <span className={s.cardEyebrow}>{category.label}</span>
         <span className={s.cardStats}>
-          <Tooltip label={forkTip}>
+          <CardTip label={forkTip}>
             <span className={s.cardStat} aria-label={`${forkCount} forks`}>
               <GitFork />
               {forkCount}
             </span>
-          </Tooltip>
+          </CardTip>
           <span className={s.cardStat} title={`${stars} stars`}>
             <Star />
             {stars}

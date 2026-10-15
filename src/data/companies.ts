@@ -27,7 +27,7 @@ export const COMPANIES: Company[] = [
     sensitivity: 'standard',
     contractSince: '2024-02-12T09:00:00Z',
     hourlyRate: 85,
-    monthlyCost: { partner: 0, platform: 0 },
+    monthlyCost: { partner: 0, platform: 149 },
   },
   {
     id: 'volkswagen',

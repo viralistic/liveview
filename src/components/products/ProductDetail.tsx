@@ -319,6 +319,10 @@ export function ProductDetail({ productId }: { productId: string }) {
                   </dd>
                   <dt>Instances</dt>
                   <dd>{product.instances.length}</dd>
+                  <dt>Versioning</dt>
+                  <dd>
+                    Like code <span className={s.factSub}>Demo: not connected to GitHub.</span>
+                  </dd>
                 </dl>
               </CardBody>
             </Card>

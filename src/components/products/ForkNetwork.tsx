@@ -174,7 +174,7 @@ export function ForkNetwork({ product, commits, forks, version, activeId, onOpen
   return (
     <div className={s.net} data-dim={dimming}>
       <div className={s.netLabels} style={{ paddingTop: TOP - LANE_H / 2 + 1 }}>
-        {lanes.map((lane, i) => {
+        {lanes.map((lane) => {
           const f = lane.fork;
           if (!f) {
             return (
@@ -191,23 +191,31 @@ export function ForkNetwork({ product, commits, forks, version, activeId, onOpen
           }
           const author = userById(f.authorId);
           return (
-            <button
+            <div
               key={f.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               className={s.netLabel}
+              data-fork="true"
               style={{ height: LANE_H, paddingLeft: 6 + (lane.depth - 1) * 16 }}
               data-active={active === f.id}
               data-status={f.status}
               onMouseEnter={() => setHover(f.id)}
               onMouseLeave={() => setHover(null)}
               onClick={() => onOpen(f)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onOpen(f);
+                }
+              }}
               title={`${f.name} · ${FORK_STATUS_LABEL[f.status]} · ${author.name} · updated ${relTime(f.updatedAt)}`}
             >
               {lane.depth > 1 && <CornerDownRight className={s.netNest} />}
               <Avatar user={author} size={18} />
               <span className={s.netName}>{f.name}</span>
               <span className={s.netStatusDot} data-status={f.status} aria-hidden="true" />
-            </button>
+            </div>
           );
         })}
       </div>

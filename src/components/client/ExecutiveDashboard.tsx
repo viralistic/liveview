@@ -14,6 +14,7 @@ import { resolveOrder, useTileOrder } from '../../stores/client';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
+import { Bars } from '../ui/Sparkline';
 import p from '../pages/pages.module.css';
 import { Bar, Stat, TileBody, TileGrid, TileHead, type TileDef } from './Tiles';
 import { TokenCounter } from './TokenCounter';
@@ -174,10 +175,9 @@ export function ExecutiveDashboard() {
         />
       ),
     },
-    { id: 'tokens', span: 2, label: 'Tokens', node: <TokensTile value={value} wfs={wfs} /> },
+    { id: 'tokens', span: 2, label: 'Tokens', node: <TokensTile value={value} wfs={wfs} daily={series.tokens} /> },
     { id: 'verticals', span: 2, label: 'Per vertical', node: <VerticalsTile companyId={companyId} /> },
     ...kpis.map<TileDef>((k) => ({ id: `kpi:${k.id}`, label: k.label, node: <KpiCard kpi={k} showVertical /> })),
-    { id: 'roadmap', span: 2, label: 'Roadmap', node: <RoadmapTile companyId={companyId} /> },
     {
       id: 'board',
       span: 2,
@@ -200,6 +200,7 @@ export function ExecutiveDashboard() {
         </>
       ),
     },
+    { id: 'roadmap', span: 2, label: 'Roadmap', node: <RoadmapTile companyId={companyId} /> },
     { id: 'scan', span: 2, label: 'AI scan', node: <AiScan companyId={companyId} workflows={wfs} /> },
   ];
   const defaults = tiles.map((t) => t.id);
@@ -262,7 +263,8 @@ export function ExecutiveDashboard() {
 /* ------------------------------------------------------------------ */
 /* Tiles with more inside than one number.                               */
 /* ------------------------------------------------------------------ */
-function TokensTile({ value, wfs }: { value: ValueSummary; wfs: Workflow[] }) {
+function TokensTile({ value, wfs, daily }: { value: ValueSummary; wfs: Workflow[]; daily: number[] }) {
+  const peak = Math.max(0, ...daily);
   return (
     <>
       <TileHead
@@ -295,6 +297,17 @@ function TokensTile({ value, wfs }: { value: ValueSummary; wfs: Workflow[] }) {
           </div>
         </div>
         <ModelBreakdown wfs={wfs} />
+        {peak > 0 && (
+          <div style={{ marginTop: 'auto', paddingTop: 16 }}>
+            <div className={s.scopeHead} style={{ marginTop: 0, marginBottom: 8 }}>
+              <span>Tokens per day, 30 days</span>
+              <span>
+                peak <b>{fmtCompact(peak)}</b>
+              </span>
+            </div>
+            <Bars data={daily} width={520} height={56} color="var(--track-strong)" gap={3} radius={2} />
+          </div>
+        )}
       </TileBody>
     </>
   );

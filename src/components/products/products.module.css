@@ -180,6 +180,7 @@
 .repoDot { color: var(--text-disabled); }
 .repoNote { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-2xs); color: var(--text-subtle); white-space: nowrap; }
 .repoNote svg { width: 11px; height: 11px; }
+@media (max-width: 1599px) { .repo .repoNote { display: none; } }
 .starBtn, .forksBtn {
   display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong); background: var(--surface); font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--text);
@@ -361,6 +362,8 @@ button.netLabel:hover, .netLabel[data-active='true'] { background: var(--surface
 .cardStats { display: inline-flex; align-items: center; gap: 8px; }
 .cardStat { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-2xs); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .cardStat svg { width: 11px; height: 11px; color: var(--text-subtle); }
+.cardTipWrap { display: inline-flex; }
+.cardTip { position: fixed; z-index: 2000; pointer-events: none; background: var(--primary); color: var(--primary-fg); font-size: var(--fs-2xs); font-weight: var(--fw-medium); padding: 6px 9px; border-radius: 6px; box-shadow: var(--shadow-md); white-space: nowrap; transform: translate(-50%, -100%); animation: pop-in var(--dur-fast) var(--ease-out); }
 .tipList { display: flex; flex-direction: column; gap: 2px; text-align: left; }
 .tipLine { display: block; font-weight: var(--fw-regular); }
 .tipLine b { font-weight: var(--fw-medium); }

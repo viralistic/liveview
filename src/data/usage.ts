@@ -4,7 +4,7 @@ import { VERTICALS } from './verticals';
 /**
  * Tokens, time and money. Every workflow has a usage profile: the model it
  * calls (if any), tokens per run and the minutes of manual work one run
- * replaces. lib/value.ts turns these into time saved, money saved, ROI and
+ * replaces (per item, so a 2-minute saving on 5,000 leads is 167 hours). lib/value.ts turns these into time saved, money saved, ROI and
  * the token counter on the client's dashboard.
  */
 export const MODELS: ModelDef[] = [
@@ -22,33 +22,33 @@ const P = (workflowId: string, minutesSavedPerRun: number, model?: ModelId, toke
 
 export const USAGE_PROFILES: WorkflowUsageProfile[] = [
   /* Viralistic */
-  P('vir-lead-intake', 4, 'gpt-4o-mini', 1800),
-  P('vir-lead-enrich', 3, 'gpt-4o', 2600),
+  P('vir-lead-intake', 3, 'gpt-4o-mini', 1800),
+  P('vir-lead-enrich', 1, 'gpt-4o', 2600),
   P('vir-invoicing', 20),
-  P('vir-content-pipeline', 35, 'gpt-4o', 7800),
+  P('vir-content-pipeline', 20, 'gpt-4o', 7800),
   P('vir-client-reporting', 45, 'claude-sonnet-4-5', 5200),
   P('vir-report-render', 5),
-  P('vir-slack-alerts', 2),
+  P('vir-slack-alerts', 0.5),
   P('vir-social-scheduler', 12),
   /* Volkswagen */
-  P('vw-dealer-lead-routing', 6, 'gpt-4o-mini', 1400),
-  P('vw-lead-scoring', 3, 'gpt-4o', 2200),
-  P('vw-test-drive-booking', 9),
-  P('vw-crm-sync', 2),
+  P('vw-dealer-lead-routing', 2, 'gpt-4o-mini', 1400),
+  P('vw-lead-scoring', 0.5, 'gpt-4o', 2200),
+  P('vw-test-drive-booking', 6),
+  P('vw-crm-sync', 0.25),
   P('vw-service-reminders', 4),
-  P('vw-parts-inventory-alerts', 11),
+  P('vw-parts-inventory-alerts', 7),
   P('vw-nps-survey', 3, 'gpt-4o-mini', 900),
   /* Transmissies.nl */
-  P('tr-order-processing', 7),
-  P('tr-stock-sync', 3),
-  P('tr-quote-requests', 38, 'claude-sonnet-4-5', 6400),
+  P('tr-order-processing', 1.5),
+  P('tr-stock-sync', 0.25),
+  P('tr-quote-requests', 4, 'claude-sonnet-4-5', 6400),
   P('tr-review-requests', 2),
-  P('tr-shipping-notifications', 3),
-  P('tr-abandoned-cart', 2, 'gpt-4o-mini', 1100),
+  P('tr-shipping-notifications', 0.4),
+  P('tr-abandoned-cart', 1, 'gpt-4o-mini', 1100),
   /* Hoasted */
-  P('ho-uptime-incidents', 15),
+  P('ho-uptime-incidents', 12),
   P('ho-ssl-expiry', 10),
-  P('ho-support-triage', 9, 'claude-haiku-4-5', 2300),
+  P('ho-support-triage', 2.5, 'claude-haiku-4-5', 2300),
   P('ho-invoice-dunning', 6),
 ];
 export const usageProfile = (workflowId: string): WorkflowUsageProfile => USAGE_PROFILES.find((p) => p.workflowId === workflowId) ?? { workflowId, minutesSavedPerRun: 2, tokensPerRun: 0 };
