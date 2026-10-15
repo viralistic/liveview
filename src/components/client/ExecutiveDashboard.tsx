@@ -57,7 +57,7 @@ export function ExecutiveDashboard() {
           unit="h"
           sub={
             <>
-              30 days · <b>{fmtInt(value.hoursSavedTotal)} h</b> since go-live
+              <b>{fmtInt(value.hoursSavedTotal)} h</b> since go-live
             </>
           }
           spark={series.hours}
@@ -90,7 +90,7 @@ export function ExecutiveDashboard() {
           value={fmtEuro(value.euroSaved30d)}
           sub={
             <>
-              30 days · <b>{fmtEuro(value.euroSavedTotal)}</b> since go-live
+              <b>{fmtEuro(value.euroSavedTotal)}</b> since go-live
             </>
           }
           spark={series.euro}
@@ -120,7 +120,7 @@ export function ExecutiveDashboard() {
           good={roi.multiple >= 1}
           sub={
             <>
-              +{fmtPct(roi.roi, 0)} on <b>{fmtEuro(cost.total)}</b> per month
+              on <b>{fmtEuro(cost.total)}</b> a month
             </>
           }
           hover={
@@ -158,7 +158,7 @@ export function ExecutiveDashboard() {
           label="Net value"
           icon={<TrendingUp />}
           value={fmtEuro(roi.net)}
-          sub="saved minus cost, 30 days"
+          sub="after cost"
           spark={series.euro.map((e) => Math.max(0, e - dailyCost))}
           hover={
             <>
@@ -187,7 +187,6 @@ export function ExecutiveDashboard() {
           <TileHead
             title="Verticals leaderboard"
             icon={<Trophy />}
-            sub="hours saved, KPI targets, adoption and points"
             action={
               <a href="/teams" className={s.hint}>
                 All teams <ArrowRight />
@@ -278,22 +277,22 @@ function TokensTile({ value, wfs, daily }: { value: ValueSummary; wfs: Workflow[
       />
       <TileBody>
         <TokenCounter base={value.tokensTotal} perSecond={value.tokensPerSecond} />
-        <div className={s.sub}>cumulative tokens, live · {fmtCompact(value.tokensPerSecond * 3600)} per hour on average</div>
+        <div className={s.sub}>since go-live · {fmtCompact(value.tokensPerSecond * 3600)} per hour</div>
         <div className={s.minis}>
           <div className={s.mini}>
             <b>{fmtCompact(value.tokens30d)}</b>
-            <span>tokens this month</span>
+            <span>this month</span>
           </div>
           <div className={s.mini}>
             <b>{fmtEuro(value.tokenCost30d)}</b>
-            <span>model cost this month</span>
+            <span>model cost</span>
           </div>
           <div className={s.mini}>
             <b>
               {value.modelWorkflows}
               <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 450, color: 'var(--text-subtle)' }}>/{value.workflows}</span>
             </b>
-            <span>workflows call a model</span>
+            <span>call a model</span>
           </div>
         </div>
         <ModelBreakdown wfs={wfs} />
@@ -327,7 +326,6 @@ function VerticalsTile({ companyId }: { companyId: string }) {
       <TileHead
         title="Per vertical"
         icon={<Layers />}
-        sub="tokens vs time saved vs money saved, 30 days"
         action={
           <a href="/teams" className={s.hint}>
             Teams <ArrowRight />
@@ -353,7 +351,7 @@ function VerticalsTile({ companyId }: { companyId: string }) {
                 </div>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                {v.status === 'live' ? <TripleBars value={triple} max={max} /> : <div className={s.empty}>{v.status === 'onboarding' ? `Onboarding since ${v.onboardedAt ? shortDate(v.onboardedAt) : 'recently'}. First numbers after go-live.` : 'Planned. Scope agreed, kick-off to be scheduled.'}</div>}
+                {v.status === 'live' ? <TripleBars value={triple} max={max} /> : <div className={s.empty}>{v.status === 'onboarding' ? `Onboarding since ${v.onboardedAt ? shortDate(v.onboardedAt) : 'recently'}` : 'Planned'}</div>}
               </div>
             </div>
           ))}
@@ -396,7 +394,7 @@ function RoadmapTile({ companyId }: { companyId: string }) {
       <TileHead
         title="Roadmap"
         icon={<Compass />}
-        sub={`${PHASES[current]?.label ?? project.phase} since ${shortDate(project.phaseSince)} · ${project.phaseNote}`}
+        sub={`${PHASES[current]?.label ?? project.phase} since ${shortDate(project.phaseSince)}`}
         action={
           company ? (
             <a href={`/companies/${company.slug}`} className={s.hint}>

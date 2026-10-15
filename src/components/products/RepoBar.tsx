@@ -43,9 +43,6 @@ export function RepoBar({ product, version, commitCount, forkCount, starred, sta
         </span>
       </div>
       <div className={s.repoRight}>
-        <span className={s.repoNote}>
-          <Lock /> Versioned like code. Demo: not connected to GitHub.
-        </span>
         <button type="button" className={s.starBtn} data-on={starred} onClick={onStar} aria-pressed={starred} title={starred ? 'Unstar' : 'Star this product'}>
           <Star />
           {starred ? 'Starred' : 'Star'}

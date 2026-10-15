@@ -16,11 +16,11 @@ export function DeployModal({ open, onClose, product, version, versions, variant
     <Modal open={open} onClose={onClose} title={variant ? 'Deploy variant to project' : 'Deploy to project'} width={460}>
       {variant ? (
         <p className={s.modalLede}>
-          Creates an instance of <b>{variant.name}</b>, a fork of {product.name}, in the project. The instance stays linked to the fork and follows its versions, not the product's.
+          An instance of <b>{variant.name}</b> that follows the fork's versions.
         </p>
       ) : (
         <p className={s.modalLede}>
-          Creates an instance of <b>{product.name}</b> v{version} in the project. The instance stays linked to this product and receives every update.
+          An instance of <b>{product.name}</b> v{version} that receives every update.
         </p>
       )}
       <div className={s.deployList}>

@@ -17,7 +17,7 @@ export function WorkerDashboard() {
   const { user: me } = useSession();
   const stats = statsOf(me);
   const vertical = stats ? verticalById(stats.verticalId) : me.verticalId ? verticalById(me.verticalId) : undefined;
-  if (!stats || !vertical) return <PageHeader title="My impact" lede="You are not part of a team yet. Ask your Head of AI to add you to a vertical, and your first automation run earns the first badge." />;
+  if (!stats || !vertical) return <PageHeader title="My impact" lede="Not in a team yet. Ask your Head of AI." />;
   return <WorkerInner me={me} stats={stats} vertical={vertical} />;
 }
 
@@ -34,11 +34,11 @@ function Tile({ span, children, label }: { span?: 1 | 2 | 4; children: ReactNode
 }
 
 const HOW_TO: { icon: ReactNode; label: string; points: string }[] = [
-  { icon: <Play />, label: 'Trigger an automation', points: '+2 per run' },
-  { icon: <Clock />, label: 'Hours of manual work replaced', points: '+10 per hour' },
-  { icon: <Target />, label: 'Team KPI target hit', points: '+150' },
-  { icon: <Bug />, label: 'Report a bug before the monitoring does', points: '+100' },
-  { icon: <HeartHandshake />, label: 'Onboard a colleague', points: '+200' },
+  { icon: <Play />, label: 'Run', points: '+2' },
+  { icon: <Clock />, label: 'Hour saved', points: '+10' },
+  { icon: <Target />, label: 'KPI hit', points: '+150' },
+  { icon: <Bug />, label: 'Bug found', points: '+100' },
+  { icon: <HeartHandshake />, label: 'Colleague onboarded', points: '+200' },
 ];
 
 function WorkerInner({ me, stats, vertical }: { me: User; stats: MemberStats; vertical: Vertical }) {
@@ -88,11 +88,11 @@ function WorkerInner({ me, stats, vertical }: { me: User; stats: MemberStats; ve
       <div className={s.grid}>
         <Tile label="Hours saved">
           <div id="tile-hours" />
-          <Stat label="Hours saved" icon={<Clock />} value={fmtInt(stats.hoursSaved30d)} unit="h" sub="30 days, through the automations you triggered" />
+          <Stat label="Hours saved" icon={<Clock />} value={fmtInt(stats.hoursSaved30d)} unit="h" sub="30 days" />
         </Tile>
         <Tile label="Money saved">
           <div id="tile-euro" />
-          <Stat label="Money saved" icon={<Euro />} value={fmtEuro(stats.euroSaved30d)} sub="30 days, at the team's hourly rate" />
+          <Stat label="Money saved" icon={<Euro />} value={fmtEuro(stats.euroSaved30d)} sub="30 days" />
         </Tile>
         <Tile label="Runs triggered">
           <Stat
@@ -122,7 +122,7 @@ function WorkerInner({ me, stats, vertical }: { me: User; stats: MemberStats; ve
         </Tile>
 
         <Tile span={2} label="Points">
-          <TileHead title="Points" icon={<Gift />} sub="earned with every run, hour saved and target hit" />
+          <TileHead title="Points" icon={<Gift />} />
           <TileBody>
             <div className={s.pointsBig}>
               <CountUp value={stats.points} />
@@ -177,7 +177,6 @@ function WorkerInner({ me, stats, vertical }: { me: User; stats: MemberStats; ve
                 <i key={i} data-on={on ? 'true' : undefined} />
               ))}
             </div>
-            <div className={s.sub}>{stats.streakWeeks >= 12 ? 'A whole quarter without missing a week.' : `${12 - stats.streakWeeks} more weeks to the quarter badge.`}</div>
           </TileBody>
         </Tile>
 
@@ -191,7 +190,6 @@ function WorkerInner({ me, stats, vertical }: { me: User; stats: MemberStats; ve
             <div style={{ display: 'flex', marginTop: 10 }}>
               <Bar value={stats.kpiTotal ? stats.kpiHits / stats.kpiTotal : 0} tone={stats.kpiTotal && stats.kpiHits === stats.kpiTotal ? 'good' : undefined} height={6} />
             </div>
-            <div className={s.sub}>Your runs carry about {fmtPct(share, 0)} of the team's progress.</div>
           </TileBody>
         </Tile>
 

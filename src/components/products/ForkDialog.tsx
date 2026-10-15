@@ -52,7 +52,7 @@ export function ForkDialog({ open, onClose, product, parent, all, version, onCre
   return (
     <Modal open={open} onClose={onClose} title={`Fork ${baseName}`} width={640}>
       <p className={s.modalLede}>
-        Starts from <b>{baseName}</b>{parent ? '' : ` v${version}`} and diverges from there. Swap a node for another tool, change the fork as you like, and open a pull request when the product should have it too.
+        From <b>{baseName}</b>{parent ? '' : ` v${version}`}. Swap nodes, then open a pull request when the product should have it.
       </p>
 
       <label className={s.field}>
@@ -110,9 +110,6 @@ export function ForkDialog({ open, onClose, product, parent, all, version, onCre
       </label>
 
       <div className={s.dialogFoot}>
-        <span className={s.repoNote}>
-          <Lock /> Versioned like code. Demo: not connected to GitHub.
-        </span>
         <div className={s.dialogBtns}>
           <Button variant="ghost" onClick={onClose}>
             Cancel

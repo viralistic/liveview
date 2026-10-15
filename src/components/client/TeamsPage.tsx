@@ -46,7 +46,7 @@ function TeamsInner() {
         title="Teams"
         lede={
           <>
-            Verticals against each other on hours saved, KPI targets, adoption and points. Together they saved <b>{fmtInt(hours)} h</b> and <b>{fmtEuro(euro)}</b> in 30 days.
+            Together <b>{fmtInt(hours)} h</b> and <b>{fmtEuro(euro)}</b> saved in 30 days.
           </>
         }
         actions={partner && companies.length > 1 ? <Segmented value={company.id} onChange={setPicked} items={companies.map((c) => ({ id: c.id, label: c.shortName }))} /> : undefined}
@@ -55,7 +55,7 @@ function TeamsInner() {
       <Podium companyId={company.id} />
 
       <Card>
-        <CardHeader title="Leaderboard" icon={<Trophy />} sub="score = hours saved × 2, plus KPI targets hit, adoption and a share of the team points" />
+        <CardHeader title="Leaderboard" icon={<Trophy />} />
         <CardBody flush>
           <VerticalTable companyId={company.id} highlightId={me.verticalId} />
         </CardBody>

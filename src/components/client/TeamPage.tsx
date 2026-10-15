@@ -64,7 +64,7 @@ function TeamInner({ vertical }: { vertical: Vertical }) {
           unit="h"
           sub={
             <>
-              30 days · <b>{fmtInt(value.hoursSavedTotal)} h</b> since go-live
+              <b>{fmtInt(value.hoursSavedTotal)} h</b> since go-live
             </>
           }
           spark={live ? series.hours : undefined}
@@ -81,7 +81,7 @@ function TeamInner({ vertical }: { vertical: Vertical }) {
           value={fmtEuro(value.euroSaved30d)}
           sub={
             <>
-              30 days · <b>{fmtEuro(value.euroSavedTotal)}</b> since go-live
+              <b>{fmtEuro(value.euroSavedTotal)}</b> since go-live
             </>
           }
           spark={live ? series.euro : undefined}
@@ -98,7 +98,7 @@ function TeamInner({ vertical }: { vertical: Vertical }) {
           value={value.tokens30d ? fmtCompact(value.tokens30d) : '0'}
           sub={
             <>
-              30 days · <b>{fmtEuro(value.tokenCost30d)}</b> model cost
+              <b>{fmtEuro(value.tokenCost30d)}</b> model cost
             </>
           }
           spark={live && value.tokens30d ? series.tokens : undefined}
@@ -134,7 +134,7 @@ function TeamInner({ vertical }: { vertical: Vertical }) {
       label: 'Team leaderboard',
       node: (
         <>
-          <TileHead title="Team leaderboard" icon={<Users />} sub={board.length ? `${board.length} people ranked by points · hours saved, euro saved, KPI targets, streak and badges` : 'Points start with the first automation run'} />
+          <TileHead title="Team leaderboard" icon={<Users />} />
           <TileBody flush>
             <TeamLeaderboard verticalId={vertical.id} highlightId={me.id} />
           </TileBody>
@@ -180,7 +180,7 @@ function TeamInner({ vertical }: { vertical: Vertical }) {
         </>
       ) : (
         <>
-          <TileHead title="Planned products" sub="what this vertical will run first" />
+          <TileHead title="Planned products" />
           <TileBody>
             {products.length ? (
               <div className={s.products}>
@@ -207,7 +207,7 @@ function TeamInner({ vertical }: { vertical: Vertical }) {
       label: 'Rewards',
       node: (
         <>
-          <TileHead title="Rewards" icon={<Gift />} sub="what the points buy, and who is close" />
+          <TileHead title="Rewards" icon={<Gift />} />
           <TileBody flush>
             <div className={s.rows}>
               {REWARDS.map((r) => {
@@ -223,7 +223,6 @@ function TeamInner({ vertical }: { vertical: Vertical }) {
                       <div className={s.rowName}>
                         {r.label} <span style={{ color: 'var(--text-subtle)', fontWeight: 450 }}>· {fmtInt(r.points)} points</span>
                       </div>
-                      <div className={s.rowSub}>{r.description}</div>
                     </div>
                     {reached.length ? (
                       <AvatarGroup users={reached} size={20} max={4} />
@@ -251,7 +250,7 @@ function TeamInner({ vertical }: { vertical: Vertical }) {
       label: 'Badges',
       node: (
         <>
-          <TileHead title="Badges" icon={<Award />} sub="earned for using the automations, saving time, hitting targets and helping the team" />
+          <TileHead title="Badges" icon={<Award />} />
           <TileBody>
             <div className={s.badgeGrid} style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))' }}>
               {BADGES.map((b) => {
@@ -300,8 +299,7 @@ function TeamInner({ vertical }: { vertical: Vertical }) {
         }
         lede={
           <>
-            {vertical.description}
-            <span style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 12, flexWrap: 'wrap' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
               {manager ? (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                   <Avatar user={manager} size={28} online={manager.online} />

@@ -70,9 +70,9 @@ export const HIGH_DEFAULTS: Partial<ProjectSettings> = {
 };
 
 export const SENSITIVITY_HINT: Record<Sensitivity, string> = {
-  standard: 'Business data without personal details. Logs kept 90 days, share links allowed.',
-  high: 'Customer or personal data. PII masked in logs, EU residency, a review step before anything reaches a customer.',
-  hyper: 'Medical, financial or legal data. Everything in High, plus 7-day logs, EU-hosted models only, no share links, no external developers. Locked.',
+  standard: 'Business data. 90-day logs, share links allowed.',
+  high: 'Personal data. PII masked, EU residency, review before outbound.',
+  hyper: 'Medical, financial or legal data. Strictest values, locked.',
 };
 
 export function defaultSettings(c: Company): ProjectSettings {

@@ -1,4 +1,3 @@
-import { ROUTE_LABEL, SIZE_LABEL } from '../../data';
 import { relTime } from '../../lib/format';
 import type { Signal } from '../../stores/signals';
 import { Badge } from '../ui/Badge';
@@ -18,12 +17,6 @@ export function IncidentRow({ inc, signal, selected, onSelect }: { inc: Incident
     <div className={v.incidentMeta}>
       <CompanyMark company={company} size={16} />
       <b>{company.shortName}</b>
-      <Badge tone="neutral" size="sm" title={`${company.employees.toLocaleString('en-US')} people`}>
-        {SIZE_LABEL[company.size]}
-      </Badge>
-      <span className={v.routeTag} data-route={company.route}>
-        {ROUTE_LABEL[company.route]}
-      </span>
     </div>
   );
   const impact = (

@@ -68,17 +68,6 @@ function IncidentsInner() {
     <>
       <PageHeader
         title="Incidents"
-        lede={
-          org.kind === 'vendor' ? (
-            <>
-              Every breaking or wasteful finding across the <b>{companies.length} instances</b> n8n is involved in. Signal the allocated partner and the task lands in their technical owner's planner.
-            </>
-          ) : (
-            <>
-              Breaking and wasteful findings across your projects, the way n8n sees them. Signals from n8n show up here and in the planner of the technical owner.
-            </>
-          )
-        }
       />
 
       <div className={v.filters}>
@@ -285,7 +274,7 @@ function Detail({ inc, proposal }: { inc: Incident; proposal: FixProposal | unde
           </div>
         ) : (
           <div className={v.sectionText} style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-xs)' }}>
-            No smart fix proposed yet. The partner's technical owner can ask the model for one from the canvas.
+            No proposal yet.
           </div>
         )}
       </div>

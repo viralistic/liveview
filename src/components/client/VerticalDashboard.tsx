@@ -33,7 +33,7 @@ import s from './client.module.css';
 export function VerticalDashboard() {
   const { user: me } = useSession();
   const vertical = (me.verticalId ? verticalById(me.verticalId) : undefined) ?? verticalsFor(me.companyId)[0];
-  if (!vertical) return <PageHeader title="No vertical yet" lede="Your company has not onboarded a vertical yet. Ask Viralistic to plan a kick-off workshop." />;
+  if (!vertical) return <PageHeader title="No vertical yet" lede="No vertical onboarded yet." />;
   return vertical.status === 'live' ? <LiveVertical vertical={vertical} /> : <OnboardingVertical vertical={vertical} />;
 }
 
@@ -67,7 +67,7 @@ function LiveVertical({ vertical }: { vertical: Vertical }) {
           unit="h"
           sub={
             <>
-              30 days · <b>{fmtInt(value.hoursSavedTotal)} h</b> since go-live
+              <b>{fmtInt(value.hoursSavedTotal)} h</b> since go-live
             </>
           }
           spark={series.hours}
@@ -84,7 +84,7 @@ function LiveVertical({ vertical }: { vertical: Vertical }) {
           value={fmtEuro(value.euroSaved30d)}
           sub={
             <>
-              30 days · <b>{fmtEuro(value.euroSavedTotal)}</b> since go-live
+              <b>{fmtEuro(value.euroSavedTotal)}</b> since go-live
             </>
           }
           spark={series.euro}
@@ -101,7 +101,7 @@ function LiveVertical({ vertical }: { vertical: Vertical }) {
           value={value.tokens30d ? fmtCompact(value.tokens30d) : '0'}
           sub={
             <>
-              30 days · <b>{fmtEuro(value.tokenCost30d)}</b> model cost
+              <b>{fmtEuro(value.tokenCost30d)}</b> model cost
             </>
           }
           spark={series.tokens}
@@ -149,7 +149,7 @@ function LiveVertical({ vertical }: { vertical: Vertical }) {
       label: 'Tokens vs time vs money',
       node: (
         <>
-          <TileHead title="Tokens vs time vs money" icon={<Layers />} sub="per workflow, 30 days" />
+          <TileHead title="Tokens vs time vs money" icon={<Layers />} sub="per workflow" />
           <TileBody flush>
             <div className={s.rows}>
               {perWf.map(({ w, triple }) => (
@@ -238,7 +238,7 @@ function LiveVertical({ vertical }: { vertical: Vertical }) {
       label: 'Rewards',
       node: (
         <>
-          <TileHead title="Next rewards" icon={<Gift />} sub="points to the next reward, per member" />
+          <TileHead title="Next rewards" icon={<Gift />} />
           <TileBody flush>
             <RewardProgress verticalId={vertical.id} />
           </TileBody>
@@ -331,7 +331,7 @@ function OnboardingVertical({ vertical }: { vertical: Vertical }) {
       label: 'Status',
       node: (
         <>
-          <TileHead title="Where we are" icon={<Rocket />} sub={vertical.description} action={<Badge tone="neutral" dot>{VERTICAL_STATUS_LABEL[vertical.status]}</Badge>} />
+          <TileHead title="Where we are" icon={<Rocket />} action={<Badge tone="neutral" dot>{VERTICAL_STATUS_LABEL[vertical.status]}</Badge>} />
           <TileBody>
             <div className={[p.roadmap, s.flatRoadmap].join(' ')} aria-label="Onboarding stages">
               {ONBOARDING_STAGES.map((label, i) => {
@@ -393,7 +393,7 @@ function OnboardingVertical({ vertical }: { vertical: Vertical }) {
       label: 'Planned products',
       node: (
         <>
-          <TileHead title="Planned products" sub="reusable automations Viralistic will tailor for you" />
+          <TileHead title="Planned products" />
           <TileBody>
             {products.length ? (
               <div className={s.products}>
@@ -436,10 +436,10 @@ function OnboardingVertical({ vertical }: { vertical: Vertical }) {
           <TileHead title="What to expect" />
           <TileBody>
             <ul className={s.expect}>
-              <li>A kick-off workshop with Viralistic to walk through the work as it happens today.</li>
-              <li>The first product running on your real data within a few weeks, nothing live by default.</li>
-              <li>You test, Viralistic fixes, then go-live. KPI, team points and the leaderboard start on that day.</li>
-              <li>This dashboard fills up with time saved, money saved and tokens as the automations run.</li>
+              <li>Kick-off workshop with Viralistic.</li>
+              <li>First product on real data, nothing live by default.</li>
+              <li>You test, Viralistic fixes, then go-live.</li>
+              <li>Points and the leaderboard start at go-live.</li>
             </ul>
           </TileBody>
         </>

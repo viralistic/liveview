@@ -191,21 +191,6 @@ export function ProductDetail({ productId }: { productId: string }) {
 
         <div className={s.detailGrid}>
           <div className={s.stack}>
-            <Card>
-              <CardHeader title="About" />
-              <CardBody>
-                <p className={s.description}>{product.description}</p>
-                {product.tags.length > 0 && (
-                  <div className={s.tags}>
-                    {product.tags.map((t) => (
-                      <span key={t} className={s.tag}>
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </CardBody>
-            </Card>
 
             <Card>
               <CardHeader
@@ -285,7 +270,7 @@ export function ProductDetail({ productId }: { productId: string }) {
               </span>
               <div>
                 <b>Source of truth</b>
-                Changes to this product are pushed to every instance. Variants live in forks with their own versions; a merged fork becomes the next version of the product.
+                Updates reach every instance. Forks keep their own versions.
               </div>
             </div>
 
@@ -319,6 +304,12 @@ export function ProductDetail({ productId }: { productId: string }) {
                   </dd>
                   <dt>Instances</dt>
                   <dd>{product.instances.length}</dd>
+                  {product.tags.length > 0 && (
+                    <>
+                      <dt>Tags</dt>
+                      <dd>{product.tags.join(', ')}</dd>
+                    </>
+                  )}
                   <dt>Versioning</dt>
                   <dd>
                     Like code <span className={s.factSub}>Demo: not connected to GitHub.</span>

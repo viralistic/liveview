@@ -40,18 +40,11 @@ export function InstancesPage() {
   if (companies.length === 0) return <NoAccess cap="respond-incidents" />;
 
   const behind = companies.filter(isBehind).length;
-  const lede =
-    org.kind === 'vendor'
-      ? `Every instance n8n is involved in, through the partner program or an enterprise agreement. Route, plan, version, health and the people allocated to it. ${behind ? `${behind} of ${companies.length} run an older release than ${LATEST_VERSION}.` : `All run ${LATEST_VERSION}.`}`
-      : org.kind === 'partner'
-        ? `The instances you run or support, the way n8n sees them: route, plan, version and health. ${behind ? `${behind} of ${companies.length} can be upgraded to ${LATEST_VERSION}.` : `All run ${LATEST_VERSION}.`}`
-        : 'Your n8n instance: how it runs, how it is doing and who is allocated to it.';
 
   return (
     <>
       <PageHeader
         title={companies.length === 1 ? 'Your instance' : 'Instances'}
-        lede={lede}
         actions={
           <Button href="/incidents" variant="secondary">
             <Siren /> Incidents
@@ -63,9 +56,6 @@ export function InstancesPage() {
           <InstanceCard key={c.id} company={c} signals={signals} focus={focus === c.id} />
         ))}
       </div>
-      <p style={{ marginTop: 16, fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <Server size={12} /> Partner route: hosted and operated by the partner. Local host: the client's own servers, supported by n8n directly.
-      </p>
     </>
   );
 }

@@ -127,7 +127,6 @@ export function VendorOverview() {
           <Card>
             <CardHeader
               title="Incidents"
-              sub="Breaking and wasteful findings across every instance n8n is involved in. Worst first."
               icon={<Siren />}
               action={critical ? <span className={s.companyCritical}>{critical} breaking</span> : undefined}
             />
@@ -154,7 +153,7 @@ export function VendorOverview() {
 
           {can('apply-updates') && (
             <Card>
-              <CardHeader title="Platform" sub={`Version adoption per instance. Latest release is ${LATEST_VERSION}.`} icon={<Rocket />} />
+              <CardHeader title="Platform" sub={`Latest ${LATEST_VERSION}`} icon={<Rocket />} />
               <CardBody flush>
                 {companies.map((c) => (
                   <PlatformRow key={c.id} company={c} />
@@ -215,7 +214,7 @@ export function VendorOverview() {
             <div className={v.sla}>
               <Clock />
               <span>
-                Response SLA: <b>breaking within one working hour</b>, wasteful within three working days. A signal lands in the technical owner's planner right away.
+                SLA: <b>breaking within 1 working hour</b>, wasteful within 3 working days.
               </span>
             </div>
           </Card>
@@ -225,7 +224,7 @@ export function VendorOverview() {
             <CardBody flush>
               {recent.length === 0 ? (
                 <div className={v.empty} style={{ color: 'var(--text-muted)' }}>
-                  <Radio style={{ color: 'var(--text-subtle)' }} /> No signals yet. Signal the partner from an incident above.
+                  <Radio style={{ color: 'var(--text-subtle)' }} /> No signals yet.
                 </div>
               ) : (
                 recent.map((sg) => <SignalFeedRow key={sg.id} signal={sg} />)
@@ -259,13 +258,6 @@ function InstanceRow({ company }: { company: Company }) {
         </div>
         <div className={v.instanceRowSub}>
           {fmtInt(company.employees)} people · {company.industry} · {company.country}
-        </div>
-        <div className={v.instanceRowSub} style={{ marginTop: 1 }}>
-          {PLAN_LABEL[company.plan]} · {TIER_LABEL[company.supportTier]} support ·{' '}
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-            {company.sensitivity === 'hyper' && <Lock />}
-            {SENSITIVITY_LABEL[company.sensitivity]} sensitivity
-          </span>
         </div>
       </div>
       <div className={v.versionCell}>

@@ -100,14 +100,13 @@ export function NewProjectDialog() {
         <div className={s.wizBody}>
           {step === 'start' && (
             <>
-              <p className={s.sectionSub} style={{ marginTop: 0 }}>How do you want to configure the project? Both ways end in the same settings, which you can change any time with the gear next to the project.</p>
               <div className={s.choices}>
                 <button type="button" className={s.choice} data-ai="true" onClick={() => { setMode('auto'); setStep('context'); }}>
                   <span className={s.choiceIcon}>
                     <Wand2 />
                   </span>
                   <span className={s.choiceTitle}>Auto-configure from context</span>
-                  <span className={s.choiceHint}>Paste notes from the intro call, the workshop or an email thread. The AI reads size, systems, language, sensitivity and what the client wants, then proposes the settings.</span>
+                  <span className={s.choiceHint}>Paste call notes or an email. The AI proposes the settings.</span>
                   <span className={s.choiceFoot}>
                     Paste context <ArrowRight />
                   </span>
@@ -117,7 +116,7 @@ export function NewProjectDialog() {
                     <ListChecks />
                   </span>
                   <span className={s.choiceTitle}>Configure manually</span>
-                  <span className={s.choiceHint}>An onboarding form: profile, route, sensitivity level and the toggles. Takes two minutes.</span>
+                  <span className={s.choiceHint}>Profile, route, sensitivity and toggles.</span>
                   <span className={s.choiceFoot}>
                     Open the form <ArrowRight />
                   </span>
@@ -130,7 +129,6 @@ export function NewProjectDialog() {
             <>
               <div className={s.section}>
                 <div className={s.sectionTitle}>Context from calls</div>
-                <p className={s.sectionSub}>Paste anything: call notes, an email, the workshop summary. Nothing leaves the project.</p>
                 <textarea className={s.input} value={text} disabled={scanning} placeholder="Intro call with ... They have about 140 people ... run HubSpot and Exact ... want quotes within the hour ... nothing goes out without a review ..." onChange={(e) => setText(e.target.value)} />
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <Button size="sm" variant="secondary" disabled={scanning} onClick={() => setText(SAMPLE_CONTEXT)}>
@@ -156,7 +154,7 @@ export function NewProjectDialog() {
                   <div className={s.sectionTitle}>What the AI found</div>
                   {result.detections.length === 0 ? (
                     <div className={s.detections}>
-                      <div className={s.empty}>Nothing recognisable yet. Add a few lines about the company, its systems and what they want.</div>
+                      <div className={s.empty}>Nothing recognisable yet.</div>
                     </div>
                   ) : (
                     <div className={s.detections}>
@@ -192,7 +190,7 @@ export function NewProjectDialog() {
             <>
               {mode === 'auto' && result && (
                 <p className={s.sectionSub} style={{ marginTop: 0 }}>
-                  Proposed from the notes. Check it, change what the AI got wrong, then create the project.
+                  Proposed from the notes. Adjust, then create.
                 </p>
               )}
               <div className={s.fields}>

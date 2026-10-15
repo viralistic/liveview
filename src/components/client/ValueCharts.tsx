@@ -39,16 +39,10 @@ export function KpiCard({ kpi, showVertical = false, contribution }: { kpi: Kpi;
         <div style={{ marginTop: 10, display: 'flex' }}>
           <Bar value={progress} tone={hit ? 'good' : undefined} height={5} />
         </div>
-        <div className={s.kpiMeta}>
-          <span>
-            Was <b>{fmtKpi(kpi, kpi.baseline)}</b>
-          </span>
-          <span>{kpi.direction === 'down' ? 'lower is better' : 'higher is better'}</span>
-        </div>
         <div className={s.kpiFoot}>
           <Sparkline data={kpi.direction === 'down' ? kpi.series.map((v) => Math.max(...kpi.series) - v + 0.01) : kpi.series} width={88} height={22} color={hit ? 'var(--health-full)' : 'var(--text-subtle)'} />
           <span className={s.kpiAgreed} title={`Agreed ${shortDate(kpi.agreedAt)} by ${agreed.map((u) => u.name).join(' and ')}`}>
-            agreed by <AvatarGroup users={agreed} size={16} max={3} />
+            <AvatarGroup users={agreed} size={16} max={3} />
           </span>
         </div>
         {contribution && <div className={s.contrib}>{contribution}</div>}
@@ -56,6 +50,10 @@ export function KpiCard({ kpi, showVertical = false, contribution }: { kpi: Kpi;
       <div className={s.hover}>
         <div>
           <span>{kpi.description}</span>
+        </div>
+        <div>
+          <span>Was {fmtKpi(kpi, kpi.baseline)}</span>
+          <b>{kpi.direction === 'down' ? 'lower is better' : 'higher is better'}</b>
         </div>
         <div>
           <span>12 weeks ago</span>

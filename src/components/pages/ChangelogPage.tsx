@@ -69,7 +69,6 @@ export function ChangelogPage() {
     <>
       <PageHeader
         title="Changelog"
-        lede={<>Every n8n release, read by the model for what it touches in your workflows. Simple changes are applied in a fresh staging container and tested before anything goes live.</>}
         actions={
           <Button variant="primary" disabled={simple.length === 0} onClick={() => setRun({ updates: simple, stage: 0, done: false })}>
             <Sparkles /> Auto-implement {simple.length ? `${simple.length} simple` : 'all simple'}
@@ -158,8 +157,7 @@ export function ChangelogPage() {
         {run && (
           <div>
             <p className={s.updateText} style={{ marginBottom: 14 }}>
-              {run.updates.length === 1 ? run.updates[0]!.title : `${run.updates.length} updates`} · {run.updates.reduce((a, u) => a + impacts[u.id]!.length, 0)} workflows. Nothing touches the live instance until you promote.
-            </p>
+              {run.updates.length === 1 ? run.updates[0]!.title : `${run.updates.length} updates`} · {run.updates.reduce((a, u) => a + impacts[u.id]!.length, 0)} workflows.</p>
             <ol className={s.stages}>
               {STAGES.map((st, i) => {
                 const state = run.done || i < run.stage ? 'done' : i === run.stage ? 'active' : 'todo';

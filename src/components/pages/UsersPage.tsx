@@ -43,11 +43,6 @@ export function UsersPage() {
     <>
       <PageHeader
         title="Users & access"
-        lede={
-          <>
-            Access is hierarchical. A role on <b>Everything</b> applies to all companies, a role on a company applies to all its workflows, and a role on a single workflow is the narrowest grant. The highest matching role wins.
-          </>
-        }
         actions={
           admin ? (
             <Button variant="primary" onClick={() => openShare({ kind: 'org' })}>
@@ -59,7 +54,7 @@ export function UsersPage() {
 
       <div className={s.stack}>
         <Card>
-          <CardHeader title="People" sub={`${people.length} people · ${people.filter((u) => u.online).length} online${persona.org === 'client' ? ' · your company and the partner people with access to it' : ''}`} icon={<UsersIcon />} />
+          <CardHeader title="People" sub={`${people.length} people`} icon={<UsersIcon />} />
           <CardBody flush>
             <table className={ui.table}>
               <thead>
@@ -145,7 +140,7 @@ export function UsersPage() {
 
         <div className={s.grid2}>
           <Card>
-            <CardHeader title="Access matrix" sub="Who can do what, per company. Dashed cells mean access to some workflows only. Click a cell to manage that company." icon={<ShieldCheck />} />
+            <CardHeader title="Access matrix" icon={<ShieldCheck />} />
             <CardBody flush>
               <table className={s.matrix}>
                 <thead>
@@ -196,7 +191,7 @@ export function UsersPage() {
           </Card>
 
           <Card>
-            <CardHeader title="Roles" sub="The same four levels you know from Figma, applied to n8n." icon={<Crown />} />
+            <CardHeader title="Roles" icon={<Crown />} />
             <CardBody>
               <div className={s.roles} style={{ gridTemplateColumns: '1fr 1fr' }}>
                 {(['admin', 'editor', 'commenter', 'viewer'] as Role[]).map((r) => (
@@ -206,17 +201,14 @@ export function UsersPage() {
                       {ROLE_LABEL[r]}
                     </div>
                     <div className={s.roleDesc}>
-                      {r === 'admin' && 'Everything an editor can, plus inviting people, changing roles and sharing links at this level and below.'}
-                      {r === 'editor' && 'Open workflows in n8n, change nodes, activate or deactivate, and manage credentials used here.'}
-                      {r === 'commenter' && 'See everything at this level and leave comments on the canvas, like a Figma commenter.'}
-                      {r === 'viewer' && 'Read only. Sees the canvas, executions and health, but cannot change or comment.'}
+                      {r === 'admin' && 'Invite, change roles, share.'}
+                      {r === 'editor' && 'Change and activate workflows.'}
+                      {r === 'commenter' && 'Comment on the canvas.'}
+                      {r === 'viewer' && 'Read only.'}
                     </div>
                   </div>
                 ))}
               </div>
-              <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginTop: 14, lineHeight: 1.5 }}>
-                Switch users from the bottom of the sidebar to see exactly what each person sees. Changes you make in the Share dialog apply immediately to the demo.
-              </p>
             </CardBody>
           </Card>
         </div>

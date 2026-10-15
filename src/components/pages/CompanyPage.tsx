@@ -253,7 +253,7 @@ export function CompanyPage({ companyId }: { companyId: string }) {
                     <Avatar user={processOwner} size={32} online={processOwner.online} />
                     <div className={s.onlineMeta}>
                       <div className={s.onlineName}>{processOwner.name}</div>
-                      <div className={s.onlineSub}>Process owner · planning, scope, budget, the client</div>
+                      <div className={s.onlineSub}>Process owner</div>
                     </div>
                     <Button size="sm" variant="ghost" icon aria-label={`Ask ${processOwner.name}`} onClick={() => openAsk({ companyId, assigneeId: processOwner.id })}>
                       <AtSign />
@@ -265,7 +265,7 @@ export function CompanyPage({ companyId }: { companyId: string }) {
                     <Avatar user={techOwner} size={32} online={techOwner.online} />
                     <div className={s.onlineMeta}>
                       <div className={s.onlineName}>{techOwner.name}</div>
-                      <div className={s.onlineSub}>Technical owner · nodes, credentials, errors, fixes</div>
+                      <div className={s.onlineSub}>Technical owner</div>
                     </div>
                     <Button size="sm" variant="ghost" icon aria-label={`Ask ${techOwner.name}`} onClick={() => openAsk({ companyId, assigneeId: techOwner.id })}>
                       <AtSign />

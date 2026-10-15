@@ -43,7 +43,6 @@ function CredentialsPageInner() {
     <>
       <PageHeader
         title="Credentials"
-        lede={<>Every connection your workflows use, who owns it and what breaks when it expires.</>}
         actions={
           <Button variant="primary" onClick={() => toast('Credential picker opens in n8n (demo)')}>
             <KeyRound /> Add credential
@@ -160,13 +159,6 @@ function CredentialsPageInner() {
               })}
             </tbody>
           </table>
-        </CardBody>
-      </Card>
-      <div style={{ height: 24 }} />
-      <Card>
-        <CardHeader title="Tip" sub="Credentials shared with 'All companies' are visible to every admin. Scope them to a company when a client should be able to rotate them." icon={<KeyRound />} />
-        <CardBody>
-          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>This page reads the same access model as the canvas: you only see credentials of companies you can access.</span>
         </CardBody>
       </Card>
     </>

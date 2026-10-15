@@ -21,7 +21,6 @@ export function CompaniesPage() {
     <>
       <PageHeader
         title="Companies"
-        lede={<>{companies.length} you manage. Open one for its own dashboard, or jump straight to its section on the canvas.</>}
         actions={
           can('manage-access') ? (
             <Button variant="primary" onClick={openNewProject}>

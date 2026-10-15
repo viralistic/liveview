@@ -228,7 +228,7 @@ export function AiScan({ companyId, verticalId, workflows }: { companyId: string
       <TileHead
         title="AI scan"
         icon={<Sparkles />}
-        sub={scan && !running ? `Scanned at ${clock(scan.at)} · ${verticalId ? 'this vertical' : 'whole company'}` : verticalId ? 'this vertical' : 'whole company'}
+        sub={scan && !running ? `Scanned at ${clock(scan.at)}` : undefined}
         action={
           scan && !running ? (
             <Button size="sm" variant="ghost" onClick={again}>
@@ -310,9 +310,6 @@ export function AiScan({ companyId, verticalId, workflows }: { companyId: string
           </div>
         ) : (
           <div className={s.scanIdle}>
-            <p>
-              Reads {workflows.length === 1 ? 'the workflow' : `the ${workflows.length} workflows`}, compares the models they call with what is available today and estimates where time, money and quality are left on the table.
-            </p>
             <Button variant="primary" onClick={start}>
               <Sparkles /> Scan for opportunities
             </Button>

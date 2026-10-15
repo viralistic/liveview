@@ -227,9 +227,6 @@ export function ForkDrawer({ fork, product, all, onClose, onUse, onForkThis, sta
               </span>
             )}
           </div>
-          <span className={s.repoNote}>
-            <Lock /> Versioned like code. Demo: not connected to GitHub.
-          </span>
         </footer>
       </aside>
     </div>

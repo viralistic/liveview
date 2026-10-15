@@ -42,7 +42,7 @@ export function RolesMatrix({ users }: { users: User[] }) {
   const cols = CAPABILITIES.length + 3;
   return (
     <Card>
-      <CardHeader title="Roles & access levels" sub="Ten personas, grouped by organization. A check means that part of LiveView exists for the persona; the grants below decide which companies and workflows it applies to." icon={<ShieldCheck />} />
+      <CardHeader title="Roles & access levels" icon={<ShieldCheck />} />
       <CardBody flush>
         <div className={s.rmWrap}>
           <table className={s.rmTable}>
@@ -74,7 +74,6 @@ export function RolesMatrix({ users }: { users: User[] }) {
                               {p.label}
                               {p.id === mine.id && <span className={s.rmYou}>you</span>}
                             </b>
-                            <span>{p.description.split('. ')[0]!.replace(/\.$/, '')}.</span>
                           </div>
                         </td>
                         <td className={s.rmPeople}>{holders.length ? <AvatarGroup users={holders} size={20} max={4} /> : <span className={s.subtle}>none here</span>}</td>
@@ -117,7 +116,6 @@ export function RolesMatrix({ users }: { users: User[] }) {
             not part of the persona
           </span>
           <span>
-            <b>Persona:</b> what someone is here to do. <b>Grants:</b> which companies and workflows they may touch.
           </span>
         </div>
       </CardBody>

@@ -76,7 +76,6 @@ function PlannerPageInner() {
     <>
       <PageHeader
         title="Planner"
-        lede={<>Client calls and the things people asked {person.id === me.id ? 'you' : person.name.split(' ')[0]} for. Tag someone and the planner decides whether it goes on the calendar or in the inbox.</>}
         actions={
           <Button variant="primary" onClick={() => openAsk({})}>
             <Plus /> Ask someone
@@ -157,7 +156,7 @@ function PlannerPageInner() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Card>
-            <CardHeader title="Inbox" icon={<Inbox />} sub={inbox.length ? 'Low importance. Pick these up when there is time.' : undefined} />
+            <CardHeader title="Inbox" icon={<Inbox />} />
             <CardBody flush>
               {inbox.length === 0 && <div className={s.empty}>Nothing waiting.</div>}
               {inbox.map((t) => (

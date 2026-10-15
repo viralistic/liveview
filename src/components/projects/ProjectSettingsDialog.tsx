@@ -126,7 +126,6 @@ export function ProjectSettingsDialog() {
             <>
               <div className={s.section}>
                 <div className={s.sectionTitle}>Profile</div>
-                <p className={s.sectionSub}>What n8n and the partner need to know about this client. n8n sees this block, never the credentials or the business numbers.</p>
                 <div className={s.profileStrip}>
                   <div className={s.profileCell}>
                     <small>Size</small>
@@ -211,7 +210,6 @@ export function ProjectSettingsDialog() {
             <>
               <div className={s.section}>
                 <div className={s.sectionTitle}>Information sensitivity</div>
-                <p className={s.sectionSub}>Decides what the automations may keep, where it runs and who may look. Hyper-sensitive locks the strict values.</p>
                 <div className={s.master}>
                   <div>
                     <b>
@@ -238,12 +236,12 @@ export function ProjectSettingsDialog() {
                 <Row label="Data residency" hint="Where executions and logs are stored." locked={isLocked(draft, 'dataResidency')}>
                   <Select<'eu' | 'any'> value={draft.dataResidency} disabled={dis || isLocked(draft, 'dataResidency')} options={[{ id: 'eu', label: 'EU only' }, { id: 'any', label: 'Any region' }]} onChange={(v) => set('dataResidency', v)} />
                 </Row>
-                {toggle('piiMasking', 'Mask personal data in logs', 'Names, emails and phone numbers are replaced before anything is written to a log.')}
-                <Row label="Log retention" hint="How long execution data stays available for debugging." locked={isLocked(draft, 'logRetentionDays')}>
+                {toggle('piiMasking', 'Mask personal data in logs', 'Names, emails and phone numbers never reach a log.')}
+                <Row label="Log retention" hint="Kept for debugging." locked={isLocked(draft, 'logRetentionDays')}>
                   <Select<'7' | '30' | '90'> value={String(draft.logRetentionDays) as '7' | '30' | '90'} disabled={dis || isLocked(draft, 'logRetentionDays')} options={[{ id: '7', label: '7 days' }, { id: '30', label: '30 days' }, { id: '90', label: '90 days' }]} onChange={(v) => set('logRetentionDays', Number(v) as 7 | 30 | 90)} />
                 </Row>
-                {toggle('euModelsOnly', 'EU-hosted models only', 'Model steps may only call endpoints hosted in the EU.')}
-                <Row label="Token budget per month" hint="Model usage stops at this amount and the Head of AI is notified. 0 means no cap.">
+                {toggle('euModelsOnly', 'EU-hosted models only')}
+                <Row label="Token budget per month" hint="0 means no cap.">
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ color: 'var(--text-muted)', fontSize: 'var(--fs-sm)' }}>€</span>
                     <input className={s.input} style={{ width: 96 }} type="number" min={0} step={50} value={draft.tokenBudgetEur} disabled={dis} onChange={(e) => set('tokenBudgetEur', Math.max(0, Number(e.target.value) || 0))} />
@@ -252,9 +250,9 @@ export function ProjectSettingsDialog() {
               </div>
               <div className={s.section}>
                 <div className={s.sectionTitle}>Sharing</div>
-                {toggle('allowShareLinks', 'Share links', 'Anyone with a link can view the shared view.')}
-                {toggle('allowExternalDevelopers', 'External developers', 'Freelancers may be assigned to workflows of this project.')}
-                {toggle('allowN8nAccess', 'n8n may see and signal', 'n8n Partner Success sees incidents and the profile, never credentials or business numbers.')}
+                {toggle('allowShareLinks', 'Share links')}
+                {toggle('allowExternalDevelopers', 'External developers')}
+                {toggle('allowN8nAccess', 'n8n may see and signal', 'Incidents and profile only.')}
               </div>
             </>
           )}
@@ -262,11 +260,10 @@ export function ProjectSettingsDialog() {
           {tab === 'approvals' && (
             <div className={s.section}>
               <div className={s.sectionTitle}>Approvals</div>
-              <p className={s.sectionSub}>What may happen without a person looking first.</p>
-              {toggle('reviewBeforeOutbound', 'Review before anything reaches a customer', 'Emails, SMS and chat messages wait in a review queue during the pilot.')}
-              {toggle('approvalForGoLive', 'Approval before go-live', 'A workflow only becomes active after the process owner approves it.')}
-              {toggle('autoApplySimpleUpdates', 'Auto-implement simple n8n updates', 'Changelog updates rated simple are applied in a staging container, tested, then promoted.')}
-              <Row label="Smart fix" hint="Which AI fix proposals may be applied without an engineer accepting them." locked={isLocked(draft, 'smartFixAutoAccept')}>
+              {toggle('reviewBeforeOutbound', 'Review before anything reaches a customer', 'Outbound messages wait for a review.')}
+              {toggle('approvalForGoLive', 'Approval before go-live')}
+              {toggle('autoApplySimpleUpdates', 'Auto-implement simple n8n updates', 'Staged, tested, then promoted.')}
+              <Row label="Smart fix" locked={isLocked(draft, 'smartFixAutoAccept')}>
                 <Select<'never' | 'minor' | 'all'> value={draft.smartFixAutoAccept} disabled={dis || isLocked(draft, 'smartFixAutoAccept')} options={[{ id: 'never', label: 'Always ask the engineer' }, { id: 'minor', label: 'Minor tips only' }, { id: 'all', label: 'Everything' }]} onChange={(v) => set('smartFixAutoAccept', v)} />
               </Row>
             </div>
@@ -275,23 +272,21 @@ export function ProjectSettingsDialog() {
           {tab === 'alerts' && (
             <div className={s.section}>
               <div className={s.sectionTitle}>Alerts</div>
-              <p className={s.sectionSub}>When and where the client hears about errors.</p>
-              <Row label="Alert hours" hint="Office hours: 9 to 17 on working days. Breaking errors are always queued for the partner.">
+              <Row label="Alert hours" hint="Breaking errors always reach the partner.">
                 <Select<'office' | 'always'> value={draft.alertHours} disabled={dis} options={[{ id: 'office', label: 'Office hours' }, { id: 'always', label: 'Always, 24/7' }]} onChange={(v) => set('alertHours', v)} />
               </Row>
               {toggle('alertSlack', 'Slack')}
               {toggle('alertEmail', 'Email')}
               {toggle('alertSms', 'SMS for breaking errors')}
-              {toggle('weeklyReport', 'Weekly report to the client', 'Every Monday: runs, time saved, money saved, what needs attention.')}
+              {toggle('weeklyReport', 'Weekly report to the client', 'Every Monday.')}
             </div>
           )}
 
           {tab === 'people' && (
             <div className={s.section}>
               <div className={s.sectionTitle}>People & culture</div>
-              <p className={s.sectionSub}>Gamification for the teams that use the automations.</p>
-              {toggle('leaderboards', 'Team leaderboards', 'Points, streaks, badges and rewards per vertical.')}
-              {toggle('crossVerticalLeaderboard', 'Verticals compete', 'Finance, New business and HRM on one board.')}
+              {toggle('leaderboards', 'Team leaderboards')}
+              {toggle('crossVerticalLeaderboard', 'Verticals compete')}
               {company && (
                 <>
                   <div className={s.sectionTitle} style={{ marginTop: 8, fontSize: 'var(--fs-sm)' }}>Who has access</div>
@@ -302,7 +297,6 @@ export function ProjectSettingsDialog() {
                       </span>
                     ))}
                   </div>
-                  <p className={s.sectionSub} style={{ marginTop: 0 }}>Manage roles from Users & access or the Share dialog.</p>
                 </>
               )}
             </div>
@@ -311,7 +305,6 @@ export function ProjectSettingsDialog() {
           {tab === 'context' && (
             <div className={s.section}>
               <div className={s.sectionTitle}>Context</div>
-              <p className={s.sectionSub}>Notes from calls and emails. The partner uses this to configure the project and the AI uses it to understand the client.</p>
               <textarea className={s.input} value={draft.notes} disabled={dis} placeholder="Paste notes from a call, an email thread or the workshop. Nothing here leaves the project." onChange={(e) => set('notes', e.target.value)} />
               {newProject && (
                 <p className={s.sectionSub}>
