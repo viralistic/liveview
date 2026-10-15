@@ -49,7 +49,10 @@ function rewriteHtml(html, depth, isRoot) {
   html = html.replace(/src="\/avatars\//g, 'src="./avatars/');
   html = html.replace(/href="(\/[^"]*)"/g, (_, h) => `href="${rewriteLink(h)}"`);
   const base = `<base href="${depth ? '../'.repeat(depth) : './'}">`;
-  if (isRoot) {
+  if (isRoot && process.env.PAGES === '1') {
+    // GitHub Pages serves the bundle as a normal site under /liveview/: keep the full document
+    html = html.replace(/<head>/i, '<head>' + base);
+  } else if (isRoot) {
     // the host wraps the root page in its own document skeleton
     html = html
       .replace(/<!doctype html>/i, '')
