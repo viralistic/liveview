@@ -37,7 +37,7 @@ export function ProductsGallery() {
 
   return (
     <>
-      <PageHeader title="Products" />
+      <PageHeader title="Products" lede="Reusable automations: one source of truth that every project follows, with the forks people made." />
 
       <div className={s.filterRow}>
         <div className={s.pills} role="tablist" aria-label="Category">

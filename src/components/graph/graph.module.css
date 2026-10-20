@@ -83,6 +83,8 @@
   position: absolute; top: 16px; right: 16px; bottom: 16px; width: 380px; z-index: 6;
   border-radius: 18px; overflow: hidden; user-select: text;
   animation: panel-in 240ms ease-out;
+  /* the graph root blocks every touch gesture; inside the panel a finger scrolls the content */
+  touch-action: pan-y;
 }
 @keyframes panel-in { from { transform: translateX(18px) scale(0.985); opacity: 0; } to { transform: none; opacity: 1; } }
 
@@ -232,8 +234,14 @@
 .emptyTitle { font-size: var(--fs-md); font-weight: var(--fw-semibold); letter-spacing: var(--tracking-tight); }
 .emptySub { font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.5; }
 
-/* touch: pan with a finger, no page scroll */
-.root { touch-action: none; }
+/* touch: pan with a finger, pinch to zoom, no page scroll; the floating panels keep their own scrolling */
+.root { touch-action: none; -webkit-touch-callout: none; }
+.controls { touch-action: pan-y; }
+.legend { touch-action: pan-y; }
+@media (hover: none) {
+  /* a tap would leave the hover tooltip stuck on */
+  .zoomBtn[data-tip]::after, .zoomPct[data-tip]::after { display: none; }
+}
 
 /* ---- phones: floating chrome above the tab bar, panel as a sheet ---- */
 @media (max-width: 700px) {

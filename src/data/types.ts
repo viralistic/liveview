@@ -36,6 +36,7 @@ export const ROUTE_HINT: Record<HostingRoute, string> = {
 export type N8nPlan = 'community' | 'pro' | 'enterprise' | 'partner';
 
 export type PersonaId =
+  | 'n8n-ceo'
   | 'n8n-success'
   | 'n8n-dev'
   | 'partner-owner'

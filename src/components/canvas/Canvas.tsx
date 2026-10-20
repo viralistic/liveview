@@ -315,21 +315,63 @@ export function Canvas() {
     };
   }, [escape, fitAll, fitSection, fitWorkflow, selection, ctrl]);
 
-  /* ---------- pointer: drag = pan, click = select, double-click = fit ---------- */
-  const drag = useRef<{ x: number; y: number; lx: number; ly: number; moved: boolean; target: Element } | null>(null);
+  /* ---------- pointer: drag = pan, click = select, double-click = fit ----------
+     Touch is additive: one finger pans (or taps), a second finger turns the gesture
+     into a pinch that zooms around the midpoint of the two fingers, and a double-tap
+     on empty canvas zooms in one step. No inertia. */
+  const drag = useRef<{ x: number; y: number; lx: number; ly: number; moved: boolean; target: Element; touch: boolean } | null>(null);
+  /** active touch points by pointerId (at most two are tracked) */
+  const touches = useRef(new Map<number, { x: number; y: number }>());
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0 && e.button !== 1) return;
     const target = e.target as Element;
     if (target.closest('[data-ui]') || target.closest('[data-rail]')) return;
+    const touch = e.pointerType === 'touch';
+    if (touch) {
+      const pts = touches.current;
+      if (pts.size >= 2) return; // a third finger changes nothing
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pts.size === 2 && drag.current) {
+        // second finger: from here on the gesture is a pinch, never a tap
+        e.currentTarget.setPointerCapture(e.pointerId);
+        const d = drag.current;
+        if (!d.moved) {
+          d.moved = true;
+          setPanning(true);
+          ctrl.cancel();
+          ctrl.interacted();
+        }
+        return;
+      }
+    }
     if (e.button === 1) e.preventDefault();
-    drag.current = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, moved: false, target };
+    drag.current = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, moved: false, target, touch };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
     if (!d) return;
+    if (e.pointerType === 'touch') {
+      const pts = touches.current;
+      const prev = pts.get(e.pointerId);
+      if (!prev) return;
+      if (pts.size >= 2) {
+        // pinch: zoom by the change in finger distance around the midpoint, then follow the midpoint
+        const other = [...pts.entries()].find(([id]) => id !== e.pointerId)![1];
+        const rect = e.currentTarget.getBoundingClientRect();
+        const d0 = Math.hypot(prev.x - other.x, prev.y - other.y) || 1;
+        const d1 = Math.hypot(e.clientX - other.x, e.clientY - other.y) || 1;
+        const m0 = { x: (prev.x + other.x) / 2 - rect.left, y: (prev.y + other.y) / 2 - rect.top };
+        const m1 = { x: (e.clientX + other.x) / 2 - rect.left, y: (e.clientY + other.y) / 2 - rect.top };
+        ctrl.zoomAt(m0.x, m0.y, d1 / d0);
+        ctrl.panBy(m1.x - m0.x, m1.y - m0.y);
+        pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        return;
+      }
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
     if (!d.moved) {
-      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 4) return;
+      if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < (d.touch ? 8 : 4)) return;
       d.moved = true;
       setPanning(true);
       ctrl.cancel();
@@ -339,25 +381,46 @@ export function Canvas() {
     d.lx = e.clientX;
     d.ly = e.clientY;
   };
-  const lastClick = useRef<{ t: number; x: number; y: number; el: Element } | null>(null);
+  const lastClick = useRef<{ t: number; x: number; y: number; el: Element | null } | null>(null);
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
-    drag.current = null;
     if (!d) return;
+    if (e.pointerType === 'touch') {
+      const pts = touches.current;
+      if (!pts.has(e.pointerId)) return; // a finger we never tracked (landed on the chrome, or a third one)
+      pts.delete(e.pointerId);
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
+      if (pts.size > 0) {
+        // one finger left after a pinch: keep panning from where it is now
+        const rest = pts.values().next().value!;
+        d.lx = rest.x;
+        d.ly = rest.y;
+        return;
+      }
+    }
+    drag.current = null;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
     if (d.moved) return setPanning(false);
     const t = d.target;
-    // double-click detection (pointer capture retargets native dblclick to the root)
+    // double-click detection (pointer capture retargets native dblclick to the root); fingers get more slop
     const now = performance.now();
     const prev = lastClick.current;
     const hit = t.closest('[data-section-label]') ?? t.closest('[data-wf]');
-    lastClick.current = hit ? { t: now, x: e.clientX, y: e.clientY, el: hit } : null;
-    if (prev && hit && prev.el === hit && now - prev.t < 400 && Math.hypot(e.clientX - prev.x, e.clientY - prev.y) < 8 && tool !== 'comment') {
+    const slop = d.touch ? 24 : 8;
+    lastClick.current = hit || d.touch ? { t: now, x: e.clientX, y: e.clientY, el: hit } : null;
+    if (prev && hit && prev.el === hit && now - prev.t < 400 && Math.hypot(e.clientX - prev.x, e.clientY - prev.y) < slop && tool !== 'comment') {
       lastClick.current = null;
       const label = hit.getAttribute('data-section-label');
       if (label) return void fitSection(label);
       if (!hit.hasAttribute('data-locked')) return void fitWorkflow(hit.getAttribute('data-wf')!);
       return;
+    }
+    if (d.touch && !hit && prev && !prev.el && now - prev.t < 400 && Math.hypot(e.clientX - prev.x, e.clientY - prev.y) < slop && tool !== 'comment') {
+      // double-tap on empty canvas: zoom in one step around the finger
+      lastClick.current = null;
+      const rect = e.currentTarget.getBoundingClientRect();
+      ctrl.interacted();
+      return void ctrl.zoomAtAnimated(e.clientX - rect.left, e.clientY - rect.top, 1.25);
     }
     if (tool === 'comment') {
       const rect = e.currentTarget.getBoundingClientRect();

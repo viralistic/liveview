@@ -1,11 +1,14 @@
 import { useMemo } from 'react';
-import { Activity, ArrowRight, Check, Clock, Lightbulb, LayoutGrid, Focus } from 'lucide-react';
+import { Activity, ArrowRight, CalendarCheck, Check, Clock, Flame, Lightbulb, LayoutGrid, Focus } from 'lucide-react';
 import { COMPANIES, SEVERITY_RANK, USERS, WORKFLOWS, type Issue } from '../../data';
-import { useSession } from '../../stores/session';
+import { useSession, useStore } from '../../stores/session';
+import { $tasks } from '../../stores/planner';
 import { latestSignal, useSignals } from '../../stores/signals';
 import { aggregateSeries, companyHealth, orgHealth } from '../../lib/health';
 import { companyMembers } from '../../lib/access';
 import { fmtCompact, fmtDuration, fmtEuro, fmtInt, fmtPct, greeting, NOW } from '../../lib/format';
+import { companyShort, upcomingFor, whenLabel } from '../../lib/today';
+import { ComeBack } from '../ui/ComeBack';
 import { Button } from '../ui/Button';
 import { Card, CardBody, CardFooter, CardHeader } from '../ui/Card';
 import { HealthRing } from '../ui/HealthRing';
@@ -15,9 +18,20 @@ import { ExportMenu } from './ExportMenu';
 import { ActivityFeed } from './shared';
 import s from './pages.module.css';
 
-/** The overview says as little as possible: who you are, what you manage, what needs you. */
+const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
+
+/** Scroll to a section on this page instead of jumping. */
+function jump(e: React.MouseEvent<HTMLAnchorElement>, id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  e.preventDefault();
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/** The overview: who you are, what needs you today, five numbers. Everything else is one scroll down. */
 export function OverviewPage() {
   const { user: me, grants, visibleWorkflows: wfs, visibleCompanies: companies } = useSession();
+  const tasks = useStore($tasks);
   const agg = useMemo(() => aggregateSeries(wfs), [wfs]);
   const runs24h = agg.runs.slice(-4).reduce((a, b) => a + b, 0);
   const failed24h = agg.failures.slice(-4).reduce((a, b) => a + b, 0);
@@ -34,6 +48,7 @@ export function OverviewPage() {
     (acc, i) => ({ runs: acc.runs + (i.estSavings?.runsPerWeek ?? 0), minutes: acc.minutes + (i.estSavings?.minutesPerWeek ?? 0), euro: acc.euro + (i.estSavings?.euroPerMonth ?? 0) }),
     { runs: 0, minutes: 0, euro: 0 },
   );
+  const upcoming = useMemo(() => upcomingFor(companies.map((c) => c.id), tasks, me.id, 10).slice(0, 3), [companies, tasks, me.id]);
 
   return (
     <>
@@ -43,6 +58,7 @@ export function OverviewPage() {
           <h1 className={s.greeting}>
             {greeting()}, {me.name.split(' ')[0]}
           </h1>
+          <p className={s.intro}>Your personal overview: how everything you are responsible for in n8n is doing, in one flash.</p>
           <div className={s.managing}>
             <span>You are managing</span>
             <a href="/workflows/canvas" className={s.pillLink}>
@@ -65,22 +81,51 @@ export function OverviewPage() {
         </div>
       </div>
 
+      {/* today, in one sentence */}
+      <div className={s.today}>
+        <span className={s.todayIcon} data-tone={critical.length ? 'critical' : 'calm'}>
+          {critical.length ? <Flame /> : <Check />}
+        </span>
+        <span>
+          {critical.length ? (
+            <>
+              <b>
+                {critical.length} {critical.length === 1 ? 'thing needs' : 'things need'} you today:
+              </b>{' '}
+              {critical.map((i, idx) => {
+                const wf = WORKFLOWS.find((w) => w.id === i.workflowId);
+                return (
+                  <span key={i.id}>
+                    {idx > 0 && (idx === critical.length - 1 ? ' and ' : ', ')}
+                    <a href={`/workflows/canvas?focus=${i.workflowId}`}>{lower(i.action)}</a> ({companyShort(wf?.companyId)})
+                  </span>
+                );
+              })}
+              .
+            </>
+          ) : (
+            <b>No critical actions today.</b>
+          )}
+          <ComeBack items={upcoming} />
+        </span>
+      </div>
+
       <div className={s.kpisMin}>
-        <div className={s.kpiMin}>
+        <a href="#activity" className={[s.kpiMin, s.tileLink].join(' ')} onClick={(e) => jump(e, 'activity')}>
           <div className={s.kpiLabel}>Runs today</div>
           <div className={s.kpiMinValue}>{fmtCompact(runs24h)}</div>
           <div className={s.hoverCard}>
             <b>{fmtInt(runs7d)}</b> runs in 7 days · <b>{fmtInt(active.reduce((a, w) => a + w.stats.runs24h, 0))}</b> today
           </div>
-        </div>
-        <div className={s.kpiMin}>
+        </a>
+        <a href="#attention" className={[s.kpiMin, s.tileLink].join(' ')} onClick={(e) => jump(e, 'attention')}>
           <div className={s.kpiLabel}>Success</div>
           <div className={s.kpiMinValue}>{fmtPct(successRate, 1)}</div>
           <div className={s.hoverCard}>
             <b>{fmtInt(failed7d)}</b> failed of <b>{fmtInt(runs7d)}</b> runs this week
           </div>
-        </div>
-        <div className={s.kpiMin}>
+        </a>
+        <a href="#attention" className={[s.kpiMin, s.tileLink].join(' ')} onClick={(e) => jump(e, 'attention')}>
           <div className={s.kpiLabel}>Failed today</div>
           <div className={s.kpiMinValue} style={{ color: failed24h ? 'var(--accent)' : undefined }}>{fmtInt(failed24h)}</div>
           <div className={s.hoverCard}>
@@ -92,15 +137,15 @@ export function OverviewPage() {
               <>Nothing is breaking</>
             )}
           </div>
-        </div>
-        <div className={s.kpiMin}>
+        </a>
+        <a href="#companies" className={[s.kpiMin, s.tileLink].join(' ')} onClick={(e) => jump(e, 'companies')}>
           <div className={s.kpiLabel}>Workflows</div>
           <div className={s.kpiMinValue}>{wfs.length}</div>
           <div className={s.hoverCard}>
             <b>{active.length}</b> active · <b>{wfs.length - active.length}</b> inactive · <b>{wfs.filter((w) => w.productId).length}</b> from products
           </div>
-        </div>
-        <div className={s.kpiMin}>
+        </a>
+        <a href="#improve" className={[s.kpiMin, s.tileLink].join(' ')} onClick={(e) => jump(e, 'improve')}>
           <div className={s.kpiLabel}>Health</div>
           <div className={s.kpiMinValue}>
             <HealthRing score={health} size={34} stroke={3.5} showLabel={false} />
@@ -109,12 +154,12 @@ export function OverviewPage() {
           <div className={s.hoverCard}>
             <b>{issues.length}</b> findings · <b>{critical.length}</b> breaking · avg run {fmtDuration(active.reduce((a, w) => a + w.stats.avgDurationMs, 0) / Math.max(1, active.length))}
           </div>
-        </div>
+        </a>
       </div>
 
       <div className={s.grid2}>
         <div className={s.stack}>
-          <Card>
+          <Card id="attention" className={s.section}>
             <CardHeader title="Needs attention" action={critical.length ? <span className={s.companyCritical}>{critical.length} breaking</span> : undefined} />
             <CardBody flush>
               {issues.length === 0 ? (
@@ -135,7 +180,7 @@ export function OverviewPage() {
             )}
           </Card>
 
-          <Card>
+          <Card id="activity" className={s.section}>
             <CardHeader title="Recent activity" icon={<Clock />} />
             <CardBody flush>
               <ActivityFeed limit={6} />
@@ -144,7 +189,7 @@ export function OverviewPage() {
         </div>
 
         <div className={s.stack}>
-          <Card>
+          <Card id="companies" className={s.section}>
             <CardHeader title="Companies" />
             <CardBody flush>
               <div className={s.companyRows}>
@@ -173,7 +218,26 @@ export function OverviewPage() {
             </CardBody>
           </Card>
 
-          <Card>
+          {upcoming.length > 0 && (
+            <Card id="upcoming" className={s.section}>
+              <CardHeader title="Coming up" icon={<CalendarCheck />} action={<a href="/planner" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>Planner</a>} />
+              <CardBody flush>
+                {upcoming.map((u) => (
+                  <div key={u.title + u.at} className={s.actionRow}>
+                    <div className={s.actionMeta}>
+                      <div className={s.actionTitle}>{u.title}</div>
+                      <div className={s.actionSub}>
+                        {whenLabel(u.at)}
+                        {u.companyId ? ` · ${companyShort(u.companyId)}` : ''}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardBody>
+            </Card>
+          )}
+
+          <Card id="improve" className={s.section}>
             <CardHeader title="Improve" icon={<Lightbulb />} action={<a href="/improvements" style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>More</a>} />
             <CardBody>
               {main ? (
@@ -182,7 +246,7 @@ export function OverviewPage() {
                   <div className={s.actionSub}>
                     {COMPANIES.find((c) => c.id === WORKFLOWS.find((w) => w.id === main.workflowId)?.companyId)?.shortName} · {WORKFLOWS.find((w) => w.id === main.workflowId)?.name}
                   </div>
-                  <div style={{ display: 'flex', gap: 18, marginTop: 14 }}>
+                  <div style={{ display: 'flex', gap: 18, marginTop: 14, flexWrap: 'wrap' }}>
                     {savings.runs > 0 && (
                       <div>
                         <div className={s.savingBig}>{fmtCompact(savings.runs)}</div>

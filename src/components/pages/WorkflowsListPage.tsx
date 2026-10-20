@@ -51,6 +51,7 @@ export function WorkflowsListPage() {
     <>
       <PageHeader
         title="Workflows"
+        lede="Every workflow you can reach, with its health, runs and open issues."
         actions={<ViewSwitcher value="list" />}
       />
 

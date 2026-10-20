@@ -6,7 +6,8 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 const people = [
   ['u-marrallisa', 'Marrallisa', 'ffd6e3'],
   ['u-mirza', 'Mirza Iqbal', 'e8e8e8'],
-  ['u-jan', 'Jan Oberhausen', 'ffe1ea'],
+  ['u-jan', 'Jan Oberhauser', 'ffe1ea'],
+  ['u-sanne', 'Sanne Vos', 'ffe3ec'],
   ['u-daan', 'Daan Visser', 'f0f0f0'],
   ['u-lotte', 'Lotte Jansen', 'ffd9e6'],
   ['u-milan', 'Milan de Groot', 'ededed'],

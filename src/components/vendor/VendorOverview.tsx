@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ArrowRight, Check, Clock, Cloud, Lock, Radio, Rocket, Server, Siren } from 'lucide-react';
+import { Check, Clock, Cloud, Flame, Lock, Radio, Rocket, Server, Siren } from 'lucide-react';
 import { PARTNER, ROUTE_LABEL, SENSITIVITY_LABEL, SIZE_LABEL, USERS, companyById, orgOfUser, projectFor, usersOfOrg, type Company } from '../../data';
 import { useSession, toast } from '../../stores/session';
 import { latestSignal, useSignals, type Signal } from '../../stores/signals';
@@ -7,6 +7,8 @@ import { personaOf } from '../../lib/persona';
 import { aggregateSeries, companyHealth } from '../../lib/health';
 import { companyValue } from '../../lib/value';
 import { fmtCompact, fmtInt, greeting, relTime, NOW } from '../../lib/format';
+import { upcomingFor } from '../../lib/today';
+import { ComeBack } from '../ui/ComeBack';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -47,6 +49,7 @@ export function VendorOverview() {
   });
   const partnerPeople = usersOfOrg(PARTNER.id);
   const recent = [...signals].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 5);
+  const upcoming = useMemo(() => upcomingFor(companies.map((c) => c.id), [], undefined, 14).slice(0, 1), [companies]);
 
   return (
     <>
@@ -58,15 +61,39 @@ export function VendorOverview() {
           <h1 className={s.greeting}>
             {greeting()}, {first(me.name)}
           </h1>
-          <div className={s.managing}>
-            <span>n8n is involved in</span>
-            <a href="/instances" className={s.pillLink}>
-              {companies.length} {companies.length === 1 ? 'instance' : 'instances'} <ArrowRight />
-            </a>
-            <span>through</span>
-            <a href="#partner" className={s.pillLink}>
-              {partners.length} {partners.length === 1 ? 'partner' : 'partners'} <ArrowRight />
-            </a>
+          <p className={s.intro}>
+            Your view from n8n: how the {companies.length} {companies.length === 1 ? 'instance' : 'instances'} n8n is involved in are running through {partners.length} {partners.length === 1 ? 'partner' : 'partners'}, and where n8n should step in.
+          </p>
+          <div className={s.today}>
+            <span className={s.todayIcon} data-tone={critical ? 'critical' : 'calm'}>
+              {critical ? <Flame /> : <Check />}
+            </span>
+            <span>
+              {critical ? (
+                <>
+                  <b>
+                    {critical} breaking {critical === 1 ? 'incident' : 'incidents'} today
+                  </b>
+                  {signalledCount ? (
+                    <>
+                      , {signalledCount} already signalled to the partner
+                    </>
+                  ) : null}
+                  . <a href="/incidents">Open incidents</a>.
+                </>
+              ) : (
+                <>
+                  <b>No breaking incidents today.</b>{openCount ? <> {openCount} open, none critical.</> : null}
+                </>
+              )}
+              {behind.length > 0 && (
+                <>
+                  {' '}
+                  <a href="/instances">{behind.length} {behind.length === 1 ? 'instance is' : 'instances are'}</a> behind {LATEST_VERSION}.
+                </>
+              )}
+              <ComeBack items={upcoming} />
+            </span>
           </div>
         </div>
         <div className={s.actions}>

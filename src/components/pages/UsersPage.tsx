@@ -43,6 +43,7 @@ export function UsersPage() {
     <>
       <PageHeader
         title="Users & access"
+        lede="Who is here, what they are here for, and what they may touch."
         actions={
           admin ? (
             <Button variant="primary" onClick={() => openShare({ kind: 'org' })}>

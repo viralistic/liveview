@@ -27,7 +27,7 @@ npm run check    # astro type check
 
 | Route | What you see |
 | --- | --- |
-| `/` | Overview: a greeting, what you manage as clickable pills, five tiles with details on hover, companies that only speak up when something breaks, action-first findings, one improvement, activity. Export the report as PDF or send it to a client. |
+| `/` | Overview: a greeting, one line on what the screen is for, and a today box that says what needs you now, or that nothing critical does, and when to come back for what. Five tiles that scroll you to the detail below, companies that only speak up when something breaks, action-first findings, one improvement, activity. Export the report as PDF or send it to a client. |
 | `/planner` | Week calendar with client calls and planned work, plus an inbox. Tag someone with `@`, the model suggests high, medium or low; high is planned within a day, medium within three working days, low only reaches the inbox. |
 | `/workflows/grid`, `/workflows`, `/workflows/canvas`, `/workflows/graph` | The same workflows as cards, a list, the Figma-style canvas (sections per project, zoom into the real node graphs, sources, travelling-dot edges, heatmap, Smart fix, live cursors, comments, floating glass detail panel) and the Obsidian-style graph (threads with travelling blobs, hover-only labels, cursors). |
 | `/improvements` | Everything that would make the workflows cheaper or faster, biggest win first, with estimated savings. |
@@ -40,7 +40,9 @@ npm run check    # astro type check
 | `/incidents`, `/instances` | The n8n side: every breaking or wasteful finding across the instances n8n is involved in, with "Signal partner" (creates a planned task for the project's technical owner at Viralistic), and the instances with route (partner route or local host), plan, version, profile (size, people, industry, support tier, sensitivity) and health. |
 | `/products/<slug>` | A product's repository view: versions, forks and variants (Salesforce instead of HubSpot, Telegram instead of Slack), who forked what, pull requests back upstream. Versioned like code; not connected to GitHub in the demo. |
 
-Home (`/`) changes per persona: the partner overview, the n8n control room, the executive dashboard with drag-and-drop tiles (time saved, money saved, ROI, the live token counter, tokens versus time versus money per vertical, agreed KPIs, roadmap, scope and next steps, verticals leaderboard, AI opportunity scan), the vertical dashboard, or a team member's own impact.
+Home (`/`) changes per persona: the partner overview, the n8n control room (Jan Oberhauser, n8n's founder and CEO, and Nadia from partner success), the executive dashboard for Sanne Vos, Volkswagen's Head of AI Ecosystem (above the fold only an intro, a today summary and four headline tiles; click a tile and the detail opens underneath; below it the live token counter, tokens versus time versus money per vertical, agreed KPIs, roadmap, scope and next steps, verticals leaderboard and the AI opportunity scan, all drag-and-drop), the vertical dashboard, or a team member's own impact. Every page opens with one sentence on what it is for.
+
+On a phone the canvas and the graph pan with one finger and pinch to zoom, with zoom buttons in the floating rail; executive tiles drag by touch in customize mode.
 
 Project configuration: the gear next to every project opens its settings (profile, information sensitivity with a hyper-sensitive lock, data residency and retention, approvals, alerts, people and culture, context). The **+** next to Projects onboards a new one: paste notes from calls and let the AI propose the configuration, or fill the form.
 

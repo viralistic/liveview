@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ArrowRight, Bug, Clock, Euro, Flame, Gift, HeartHandshake, Lock, Play, Target, Trophy, Users, Zap } from 'lucide-react';
+import { ArrowRight, Bug, Check, Clock, Euro, Flame, Gift, HeartHandshake, Lock, Play, Target, Trophy, Users, Zap } from 'lucide-react';
 import type { MemberStats, User, Vertical } from '../../data/types';
 import { BADGES, REWARDS, earnedRewards, kpisFor, leaderboard, nextReward, rankOf, verticalById } from '../../data/verticals';
 import { fmtEuro, fmtInt, fmtPct, greeting, NOW } from '../../lib/format';
@@ -10,6 +10,7 @@ import { CountUp } from './TokenCounter';
 import { KpiCard } from './ValueCharts';
 import { TeamLeaderboard } from './Leaderboard';
 import { BADGE_ICON, REWARD_ICON, firstName } from './util';
+import p from '../pages/pages.module.css';
 import s from './client.module.css';
 
 /** A team member sees their own impact, the team and what there is to earn. */
@@ -61,19 +62,15 @@ function WorkerInner({ me, stats, vertical }: { me: User; stats: MemberStats; ve
           <h1 className={s.greeting}>
             {greeting()}, {firstName(me)}
           </h1>
-          <div className={s.line}>
-            <span>You saved</span>
-            <a href="#tile-hours" className={s.pill}>
-              {fmtInt(stats.hoursSaved30d)} h
-            </a>
-            <span>and</span>
-            <a href="#tile-euro" className={s.pill}>
-              {fmtEuro(stats.euroSaved30d)}
-            </a>
-            <span>in 30 days for</span>
-            <a href={`/teams/${vertical.id}`} className={s.pill}>
-              {vertical.name} <ArrowRight />
-            </a>
+          <p className={p.intro}>Your own score with automation: what you saved, your streak, badges and rewards, and where you stand in the team.</p>
+          <div className={p.today}>
+            <span className={p.todayIcon} data-tone="calm">
+              <Check />
+            </span>
+            <span>
+              <b>Nothing to fix today.</b> You saved <b>{fmtInt(stats.hoursSaved30d)} h</b> and <b>{fmtEuro(stats.euroSaved30d)}</b> in 30 days for{' '}
+              <a href={`/teams/${vertical.id}`}>{vertical.name}</a>.{next ? <> <b>{fmtInt(next.points - stats.points)} points</b> to {next.label.charAt(0).toLowerCase() + next.label.slice(1)}.</> : null}
+            </span>
           </div>
         </div>
         <div className={s.actions}>
@@ -85,7 +82,7 @@ function WorkerInner({ me, stats, vertical }: { me: User; stats: MemberStats; ve
         </div>
       </div>
 
-      <div className={s.grid}>
+      <div className={[s.grid, s.statsGrid].join(' ')}>
         <Tile label="Hours saved">
           <div id="tile-hours" />
           <Stat label="Hours saved" icon={<Clock />} value={fmtInt(stats.hoursSaved30d)} unit="h" sub="30 days" />
@@ -120,6 +117,9 @@ function WorkerInner({ me, stats, vertical }: { me: User; stats: MemberStats; ve
             }
           />
         </Tile>
+      </div>
+
+      <div className={s.grid}>
 
         <Tile span={2} label="Points">
           <TileHead title="Points" icon={<Gift />} />

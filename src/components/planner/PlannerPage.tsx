@@ -76,6 +76,7 @@ function PlannerPageInner() {
     <>
       <PageHeader
         title="Planner"
+        lede="Your week: client calls, what people asked you for, and where the planner put it."
         actions={
           <Button variant="primary" onClick={() => openAsk({})}>
             <Plus /> Ask someone
@@ -113,6 +114,7 @@ function PlannerPageInner() {
             }
           />
           <CardBody flush>
+            <div className={s.weekScroll}>
             <div className={s.week}>
               <div />
               {days.map((d) => (
@@ -150,6 +152,7 @@ function PlannerPageInner() {
                   </div>
                 );
               })}
+            </div>
             </div>
           </CardBody>
         </Card>

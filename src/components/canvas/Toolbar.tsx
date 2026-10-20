@@ -73,8 +73,8 @@ export function Toolbar({ tool, onTool, heat, onHeat, connections, onConnections
         </button>
       </Tooltip>
       <Tooltip label="Fit everything" kbd="⇧1">
-        <button type="button" className={s.fitBtn} onClick={onFit}>
-          <Maximize2 /> Fit
+        <button type="button" className={s.fitBtn} onClick={onFit} aria-label="Fit everything">
+          <Maximize2 /> <span className={s.fitLabel}>Fit</span>
         </button>
       </Tooltip>
     </div>

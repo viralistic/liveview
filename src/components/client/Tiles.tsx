@@ -24,12 +24,30 @@ interface Drag {
   grabDy: number;
   startX: number;
   startY: number;
+  /** last pointer position, so an auto-scroll step can re-place the tile without a new event */
+  px: number;
+  py: number;
   moved: boolean;
   rects: Map<string, DOMRect>;
+  /** nearest scrolling ancestor: dragging near its edge scrolls it (phones show one column) */
+  scroller: HTMLElement | null;
+  raf: number;
 }
 type Drop = { id: string; side: 'before' | 'after'; axis: 'x' | 'y' } | null;
 
-const INTERACTIVE = 'a,button,input,select,textarea,[data-grip]';
+/* controls inside a tile keep working in Customize mode; the grip button starts its own drag */
+const INTERACTIVE = 'a,button,input,select,textarea';
+/** px from the scroller's edge where dragging starts to scroll it, and the top speed per frame */
+const SCROLL_ZONE = 56;
+const SCROLL_SPEED = 14;
+
+function findScroller(from: HTMLElement | null): HTMLElement | null {
+  for (let el = from; el; el = el.parentElement) {
+    const o = getComputedStyle(el).overflowY;
+    if ((o === 'auto' || o === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el;
+  }
+  return null;
+}
 
 export function TileGrid({ tiles, order, onReorder, customize = false }: { tiles: TileDef[]; order: string[]; /** without it the grid is static: no handles, no dragging */ onReorder?: (ids: string[]) => void; customize?: boolean }) {
   const reorderable = !!onReorder;
@@ -112,7 +130,7 @@ export function TileGrid({ tiles, order, onReorder, customize = false }: { tiles
     const el = (e.currentTarget as HTMLElement).closest<HTMLElement>('[data-tile]');
     if (!el) return;
     const r = el.getBoundingClientRect();
-    drag.current = { id, el, grabDx: e.clientX - r.left, grabDy: e.clientY - r.top, startX: e.clientX, startY: e.clientY, moved: false, rects: snapshot() };
+    drag.current = { id, el, grabDx: e.clientX - r.left, grabDy: e.clientY - r.top, startX: e.clientX, startY: e.clientY, px: e.clientX, py: e.clientY, moved: false, rects: snapshot(), scroller: findScroller(gridRef.current), raf: 0 };
     try {
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     } catch {
@@ -121,28 +139,21 @@ export function TileGrid({ tiles, order, onReorder, customize = false }: { tiles
     e.preventDefault();
   };
 
-  const move = (e: PointerEvent<HTMLElement>) => {
-    const d = drag.current;
+  /** place the dragged tile under the pointer and work out where it would land */
+  const track = (d: Drag) => {
     const grid = gridRef.current;
-    if (!d || !grid) return;
-    if (!d.moved) {
-      if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < 4) return;
-      d.moved = true;
-      d.el.style.transition = 'none';
-      d.el.style.zIndex = '10';
-      setDragging(d.id);
-    }
+    if (!grid) return;
     const g = grid.getBoundingClientRect();
     // offsetLeft/Top are layout positions, unaffected by the transform we set
-    const x = e.clientX - d.grabDx - (g.left + d.el.offsetLeft);
-    const y = e.clientY - d.grabDy - (g.top + d.el.offsetTop);
+    const x = d.px - d.grabDx - (g.left + d.el.offsetLeft);
+    const y = d.py - d.grabDy - (g.top + d.el.offsetTop);
     d.el.style.transform = `translate(${x}px, ${y}px) scale(1.02)`;
     let next: Drop = null;
     for (const [id, r] of d.rects) {
       if (id === d.id) continue;
-      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) continue;
+      if (d.px < r.left || d.px > r.right || d.py < r.top || d.py > r.bottom) continue;
       const axis: 'x' | 'y' = r.width >= g.width - 2 ? 'y' : 'x';
-      const side: 'before' | 'after' = axis === 'x' ? (e.clientX < r.left + r.width / 2 ? 'before' : 'after') : e.clientY < r.top + r.height / 2 ? 'before' : 'after';
+      const side: 'before' | 'after' = axis === 'x' ? (d.px < r.left + r.width / 2 ? 'before' : 'after') : d.py < r.top + r.height / 2 ? 'before' : 'after';
       next = { id, side, axis };
       break;
     }
@@ -153,10 +164,54 @@ export function TileGrid({ tiles, order, onReorder, customize = false }: { tiles
     }
   };
 
+  /** near the top or bottom edge of the scroller the page scrolls, and the tile stays under the finger */
+  const autoScroll = (d: Drag) => {
+    const sc = d.scroller;
+    if (!sc) return;
+    const r = sc.getBoundingClientRect();
+    const top = d.py - r.top;
+    const bottom = r.bottom - d.py;
+    const speed = top < SCROLL_ZONE ? -((SCROLL_ZONE - Math.max(0, top)) / SCROLL_ZONE) * SCROLL_SPEED : bottom < SCROLL_ZONE ? ((SCROLL_ZONE - Math.max(0, bottom)) / SCROLL_ZONE) * SCROLL_SPEED : 0;
+    if (!speed) {
+      if (d.raf) cancelAnimationFrame(d.raf);
+      d.raf = 0;
+      return;
+    }
+    if (d.raf) return;
+    const step = () => {
+      d.raf = 0;
+      if (drag.current !== d) return;
+      const before = sc.scrollTop;
+      sc.scrollTop += speed;
+      if (sc.scrollTop === before) return; // at the end
+      d.rects = snapshot();
+      track(d);
+      d.raf = requestAnimationFrame(step);
+    };
+    d.raf = requestAnimationFrame(step);
+  };
+
+  const move = (e: PointerEvent<HTMLElement>) => {
+    const d = drag.current;
+    if (!d || !gridRef.current) return;
+    if (!d.moved) {
+      if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < 4) return;
+      d.moved = true;
+      d.el.style.transition = 'none';
+      d.el.style.zIndex = '10';
+      setDragging(d.id);
+    }
+    d.px = e.clientX;
+    d.py = e.clientY;
+    track(d);
+    autoScroll(d);
+  };
+
   const end = (e: PointerEvent<HTMLElement>) => {
     const d = drag.current;
     drag.current = null;
     if (!d) return;
+    if (d.raf) cancelAnimationFrame(d.raf);
     try {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     } catch {

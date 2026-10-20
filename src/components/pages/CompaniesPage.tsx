@@ -21,6 +21,7 @@ export function CompaniesPage() {
     <>
       <PageHeader
         title="Companies"
+        lede="The projects you manage and how each one is doing."
         actions={
           can('manage-access') ? (
             <Button variant="primary" onClick={openNewProject}>

@@ -58,3 +58,10 @@
 .fixTest { color: var(--text-muted); line-height: 1.4; }
 .fixReview { display: flex; align-items: center; gap: 8px; color: var(--text-muted); padding-top: 8px; border-top: 1px solid var(--product-border); }
 .fix[data-compact='true'] .fixChanges li span { min-width: 80px; }
+
+/* phones: the week keeps readable day columns and scrolls sideways (v5) */
+.weekScroll { min-width: 0; }
+@media (max-width: 700px) {
+  .weekScroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .weekScroll .week { min-width: 620px; }
+}

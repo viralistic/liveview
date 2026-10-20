@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowRight, AtSign, Check, Clock, Cpu, Euro, Gift, Layers, Rocket, RotateCcw, SlidersHorizontal, Trophy, Users, Workflow as WorkflowIcon } from 'lucide-react';
+import { ArrowRight, AtSign, Check, Clock, Cpu, Euro, Flame, Gift, Layers, Rocket, RotateCcw, SlidersHorizontal, Trophy, Users, Workflow as WorkflowIcon } from 'lucide-react';
 import type { Vertical } from '../../data/types';
 import { companyById } from '../../data/companies';
 import { USERS } from '../../data/users';
@@ -10,10 +10,12 @@ import { VERTICAL_STATUS_LABEL, kpisFor, leaderboard, verticalById, verticalsFor
 import { workflowHealth } from '../../lib/health';
 import { dailyValueSeries, verticalScores, verticalValue, workflowValue } from '../../lib/value';
 import { daysAgo, fmtCompact, fmtEuro, fmtInt, fmtPct, greeting, NOW } from '../../lib/format';
+import { upcomingFor, whenLabel } from '../../lib/today';
+import { ComeBack } from '../ui/ComeBack';
 import { toast, useSession } from '../../stores/session';
 import { openAsk } from '../../stores/planner';
 import { resolveOrder, useTileOrder } from '../../stores/client';
-import { Avatar, AvatarGroup } from '../ui/Avatar';
+import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { HealthRing } from '../ui/HealthRing';
@@ -45,6 +47,8 @@ function LiveVertical({ vertical }: { vertical: Vertical }) {
   const series = useMemo(() => dailyValueSeries(wfs), [wfs]);
   const kpis = kpisFor(company.id, vertical.id);
   const rank = verticalRank(company.id, vertical.id);
+  const breaking = useMemo(() => wfs.filter((w) => w.issues.some((i) => i.severity === 'critical')), [wfs]);
+  const upcoming = useMemo(() => upcomingFor([company.id], [], undefined, 14).slice(0, 1), [company.id]);
   const score = verticalScores(company.id).find((x) => x.vertical.id === vertical.id);
   const board = leaderboard(vertical.id);
   const [customize, setCustomize] = useState(false);
@@ -260,24 +264,37 @@ function LiveVertical({ vertical }: { vertical: Vertical }) {
           <h1 className={s.greeting}>
             {greeting()}, {firstName(me)}
           </h1>
-          <div className={s.line}>
-            <span>{vertical.name} saved</span>
-            <a href="#tile-time" className={s.pill}>
-              {fmtInt(value.hoursSaved30d)} h
-            </a>
-            <span>and</span>
-            <a href="#tile-money" className={s.pill}>
-              {fmtEuro(value.euroSaved30d)}
-            </a>
-            <span>in 30 days</span>
-            {rank && (
-              <>
-                <span>·</span>
-                <a href="/teams" className={s.pill}>
-                  {rank.rank === 1 && <Trophy />}#{rank.rank} of {rank.of} verticals <ArrowRight />
-                </a>
-              </>
-            )}
+          <p className={p.intro}>How {vertical.name} performs with automation: what the team saved, its KPIs, the leaderboard and what comes next.</p>
+          <div className={p.today}>
+            <span className={p.todayIcon} data-tone={breaking.length ? 'critical' : 'calm'}>
+              {breaking.length ? <Flame /> : <Check />}
+            </span>
+            <span>
+              {breaking.length ? (
+                <>
+                  <b>
+                    {breaking.length} {breaking.length === 1 ? 'workflow is' : 'workflows are'} breaking:
+                  </b>{' '}
+                  {breaking.map((w, idx) => (
+                    <span key={w.id}>
+                      {idx > 0 && (idx === breaking.length - 1 ? ' and ' : ', ')}
+                      <a href={`/workflows/canvas?focus=${w.id}`}>{w.name}</a>
+                    </span>
+                  ))}
+                  . Viralistic is on it.
+                </>
+              ) : (
+                <b>No critical actions today.</b>
+              )}{' '}
+              {vertical.name} saved <b>{fmtInt(value.hoursSaved30d)} h</b> and <b>{fmtEuro(value.euroSaved30d)}</b> in 30 days
+              {rank ? (
+                <>
+                  , <a href="/teams">#{rank.rank} of {rank.of} verticals</a>
+                </>
+              ) : null}
+              .
+              <ComeBack items={upcoming} company={false} />
+            </span>
           </div>
         </div>
         <div className={s.actions}>
@@ -484,17 +501,18 @@ function OnboardingVertical({ vertical }: { vertical: Vertical }) {
           <h1 className={s.greeting}>
             {greeting()}, {firstName(me)}
           </h1>
-          <div className={s.line}>
-            <span>{vertical.name} is</span>
-            <span className={s.pill}>{VERTICAL_STATUS_LABEL[vertical.status].toLowerCase()}</span>
-            <span>with</span>
-            <a href="#tile-products" className={s.pill}>
-              {products.length} planned {products.length === 1 ? 'product' : 'products'}
-            </a>
-            <span>and</span>
-            <a href="#tile-team" className={s.pill}>
-              <AvatarGroup users={team} size={16} max={3} /> {team.length} {team.length === 1 ? 'person' : 'people'}
-            </a>
+          <p className={p.intro}>How {vertical.name} is getting ready for automation: where onboarding stands, the planned products and the team.</p>
+          <div className={p.today}>
+            <span className={p.todayIcon} data-tone="calm">
+              <Check />
+            </span>
+            <span>
+              <b>Nothing to do today.</b> {vertical.name} is {VERTICAL_STATUS_LABEL[vertical.status].toLowerCase()} with <a href="#tile-products">{products.length} planned {products.length === 1 ? 'product' : 'products'}</a> and{' '}
+              <a href="#tile-team">
+                {team.length} {team.length === 1 ? 'person' : 'people'}
+              </a>
+              . Come back <b>{whenLabel(kickoff.at)}</b> for ‘{kickoff.title}’{owner ? <> with {firstName(owner)}</> : null}.
+            </span>
           </div>
         </div>
         <div className={s.actions}>

@@ -45,6 +45,7 @@ export function InstancesPage() {
     <>
       <PageHeader
         title={companies.length === 1 ? 'Your instance' : 'Instances'}
+        lede={companies.length === 1 ? 'How your n8n runs, what it costs and who looks after it.' : 'Every instance n8n is involved in: how it runs, its size and who is allocated.'}
         actions={
           <Button href="/incidents" variant="secondary">
             <Siren /> Incidents

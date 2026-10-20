@@ -50,6 +50,18 @@ interface Box {
 type Placement = 'b' | 't' | 'r' | 'l';
 const PLACEMENTS: Placement[] = ['b', 't', 'r', 'l'];
 
+/** One touch gesture: the fingers on the screen and what the first one landed on. */
+interface TouchSession {
+  pts: Map<number, Pt>;
+  node: GraphNode | null;
+  moved: boolean;
+  pinched: boolean;
+  dragging: boolean;
+  /** anchor of the one-finger pan (reset when a finger lifts) and the view at that moment */
+  start: Pt;
+  view: Pt;
+}
+
 /** A curved thread between two nodes: quadratic bezier, trimmed at the node edges. */
 interface Thread {
   link: GraphLink;
@@ -515,8 +527,119 @@ export function Graph() {
     [animateTo],
   );
 
+  /* touch: one finger pans the background or drags a node, a second finger turns the
+     gesture into a pinch that zooms around the midpoint of the fingers. No inertia. */
+  const touchRef = useRef<TouchSession | null>(null);
+  const onTouchDown = (e: ReactPointerEvent<Element>, node: GraphNode | null) => {
+    const sim = simRef.current;
+    const svg = svgRef.current;
+    if (!sim || !svg) return;
+    const cur = touchRef.current;
+    if (cur) {
+      if (cur.pts.size >= 2) return; // a third finger changes nothing
+      cur.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      cur.pinched = true;
+      cur.moved = true;
+      if (cur.dragging && cur.node) {
+        // two fingers always zoom: let go of the node
+        cur.node.fx = null;
+        cur.node.fy = null;
+        cur.dragging = false;
+        dragRef.current = null;
+        setDraggingId(null);
+        sim.alphaTarget(0);
+      }
+      cancelAnimationFrame(animRef.current);
+      userInteracted();
+      setPanning(true);
+      return;
+    }
+    cancelAnimationFrame(animRef.current);
+    const s: TouchSession = {
+      pts: new Map([[e.pointerId, { x: e.clientX, y: e.clientY }]]),
+      node,
+      moved: false,
+      pinched: false,
+      dragging: false,
+      start: { x: e.clientX, y: e.clientY },
+      view: { x: viewRef.current.x, y: viewRef.current.y },
+    };
+    touchRef.current = s;
+    const move = (ev: PointerEvent) => {
+      if (ev.pointerType !== 'touch') return;
+      const prev = s.pts.get(ev.pointerId);
+      if (!prev) return;
+      const rect = svg.getBoundingClientRect();
+      if (s.pts.size >= 2) {
+        // pinch: scale by the change in finger distance around the midpoint, then follow the midpoint
+        const other = [...s.pts.entries()].find(([id]) => id !== ev.pointerId)![1];
+        const d0 = Math.hypot(prev.x - other.x, prev.y - other.y) || 1;
+        const d1 = Math.hypot(ev.clientX - other.x, ev.clientY - other.y) || 1;
+        const m0 = { x: (prev.x + other.x) / 2 - rect.left, y: (prev.y + other.y) / 2 - rect.top };
+        const m1 = { x: (ev.clientX + other.x) / 2 - rect.left, y: (ev.clientY + other.y) / 2 - rect.top };
+        const v = viewRef.current;
+        const k = clamp(v.k * (d1 / d0), MIN_K, MAX_K);
+        const r = k / v.k;
+        setView({ k, x: m1.x - (m0.x - v.x) * r, y: m1.y - (m0.y - v.y) * r });
+        s.pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+        return;
+      }
+      s.pts.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
+      const dx = ev.clientX - s.start.x;
+      const dy = ev.clientY - s.start.y;
+      const dragNode = s.node && !s.pinched ? s.node : null;
+      if (!s.moved) {
+        if (Math.hypot(dx, dy) < 6) return;
+        s.moved = true;
+        userInteracted();
+        if (dragNode) {
+          s.dragging = true;
+          dragRef.current = dragNode.id;
+          setDraggingId(dragNode.id);
+          sim.alphaTarget(0.3).restart();
+        } else setPanning(true);
+      }
+      if (dragNode && s.dragging) {
+        const v = viewRef.current;
+        dragNode.fx = (ev.clientX - rect.left - v.x) / v.k;
+        dragNode.fy = (ev.clientY - rect.top - v.y) / v.k;
+      } else setView({ ...viewRef.current, x: s.view.x + dx, y: s.view.y + dy });
+    };
+    const up = (ev: PointerEvent) => {
+      if (ev.pointerType !== 'touch' || !s.pts.has(ev.pointerId)) return;
+      s.pts.delete(ev.pointerId);
+      if (s.pts.size > 0) {
+        // one finger left after a pinch: keep panning from where it is now
+        const rest = s.pts.values().next().value!;
+        s.start = { x: rest.x, y: rest.y };
+        s.view = { x: viewRef.current.x, y: viewRef.current.y };
+        return;
+      }
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      touchRef.current = null;
+      setPanning(false);
+      if (s.dragging && s.node) {
+        s.node.fx = null;
+        s.node.fy = null;
+        dragRef.current = null;
+        setDraggingId(null);
+        sim.alphaTarget(0);
+      }
+      if (!s.moved) {
+        if (s.node) select(s.node);
+        else setSelectedId(null);
+      }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  };
+
   const onBgPointerDown = (e: ReactPointerEvent<SVGRectElement>) => {
     if (e.button !== 0) return;
+    if (e.pointerType === 'touch') return onTouchDown(e, null);
     cancelAnimationFrame(animRef.current);
     const start = { x: e.clientX, y: e.clientY, vx: viewRef.current.x, vy: viewRef.current.y, moved: false };
     const move = (ev: PointerEvent) => {
@@ -544,6 +667,7 @@ export function Graph() {
   const onNodePointerDown = (e: ReactPointerEvent<SVGGElement>, n: GraphNode) => {
     if (e.button !== 0) return;
     e.stopPropagation();
+    if (e.pointerType === 'touch') return onTouchDown(e, n);
     const sim = simRef.current;
     const svg = svgRef.current;
     if (!sim || !svg) return;

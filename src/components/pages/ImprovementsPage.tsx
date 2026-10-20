@@ -26,7 +26,7 @@ export function ImprovementsPage() {
   );
   return (
     <>
-      <PageHeader title="Improvements" />
+      <PageHeader title="Improvements" lede="Where the automations waste runs, minutes or money. Biggest win first." />
       <div className={s.kpisMin} style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginTop: 0 }}>
         <div className={s.kpiMin}>
           <div className={s.kpiLabel}>Fewer runs</div>

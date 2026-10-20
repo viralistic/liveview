@@ -179,3 +179,9 @@
 .empty { padding: 28px 18px; font-size: var(--fs-sm); color: var(--text-muted); display: flex; align-items: center; gap: 10px; }
 .empty svg { width: 16px; height: 16px; color: var(--health-full); }
 .count { font-size: var(--fs-xs); color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+
+/* phones (v5): incident actions drop under the text, stat tiles two per row */
+@media (max-width: 700px) {
+  .incident { grid-template-columns: auto minmax(0, 1fr); gap: 10px 12px; padding: 12px 14px; }
+  .incidentActions { grid-column: 2; flex-direction: row; align-items: center; flex-wrap: wrap; justify-content: flex-start; }
+}

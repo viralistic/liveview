@@ -65,6 +65,18 @@ export interface Persona {
 
 export const PERSONAS: Persona[] = [
   {
+    id: 'n8n-ceo',
+    org: 'vendor',
+    label: 'n8n Founder & CEO',
+    short: 'CEO',
+    description: 'Runs n8n. Sees how the partner network and every involved instance are doing, and where n8n should step in.',
+    reach: 'Every involved instance and partner. No credentials.',
+    home: 'vendor',
+    nav: ['overview', 'instances', 'incidents', 'changelog', 'products', 'users'],
+    sideList: 'instances',
+    capabilities: ['view-canvas', 'see-tokens', 'signal-partner', 'respond-incidents', 'publish-products'],
+  },
+  {
     id: 'n8n-success',
     org: 'vendor',
     label: 'n8n Partner Success',

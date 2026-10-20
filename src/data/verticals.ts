@@ -42,11 +42,11 @@ const K = (id: string, companyId: string, verticalId: string | undefined, label:
 
 export const KPIS: Kpi[] = [
   /* Volkswagen */
-  K('kpi-vw-response', 'volkswagen', 'vw-new-business', 'Lead response time', 'Minutes between a dealer lead arriving and the first personal reply.', 'min', 'down', 240, 5, 4.2, [38, 22, 14, 9, 7, 6, 5.5, 5.1, 4.8, 4.6, 4.4, 4.2], daysAgo(170), ['u-marrallisa', 'u-jan']),
-  K('kpi-vw-testdrives', 'volkswagen', 'vw-new-business', 'Test drives booked online', 'Share of test drives booked without a phone call.', '%', 'up', 8, 60, 54, [12, 18, 24, 31, 36, 40, 44, 47, 49, 51, 53, 54], daysAgo(170), ['u-marrallisa', 'u-jan']),
+  K('kpi-vw-response', 'volkswagen', 'vw-new-business', 'Lead response time', 'Minutes between a dealer lead arriving and the first personal reply.', 'min', 'down', 240, 5, 4.2, [38, 22, 14, 9, 7, 6, 5.5, 5.1, 4.8, 4.6, 4.4, 4.2], daysAgo(170), ['u-marrallisa', 'u-sanne']),
+  K('kpi-vw-testdrives', 'volkswagen', 'vw-new-business', 'Test drives booked online', 'Share of test drives booked without a phone call.', '%', 'up', 8, 60, 54, [12, 18, 24, 31, 36, 40, 44, 47, 49, 51, 53, 54], daysAgo(170), ['u-marrallisa', 'u-sanne']),
   K('kpi-vw-reminders', 'volkswagen', 'vw-after-sales', 'Service reminder reach', 'Customers reached with a service reminder before the due date.', '%', 'up', 55, 90, 93, [58, 64, 70, 76, 81, 85, 88, 90, 91, 92, 92, 93], daysAgo(70), ['u-marrallisa', 'u-anouk']),
-  K('kpi-vw-stockouts', 'volkswagen', 'vw-parts', 'Stock-outs per month', 'Parts orders that could not be fulfilled from stock.', 'count', 'down', 31, 10, 14, [31, 29, 27, 26, 23, 22, 20, 18, 17, 16, 15, 14], daysAgo(50), ['u-marrallisa', 'u-jan']),
-  K('kpi-vw-hours', 'volkswagen', undefined, 'Hours saved per month', 'Manual work replaced across every live vertical.', 'h', 'up', 0, 400, 462, [60, 110, 160, 210, 260, 300, 340, 370, 400, 425, 445, 462], daysAgo(170), ['u-marrallisa', 'u-jan']),
+  K('kpi-vw-stockouts', 'volkswagen', 'vw-parts', 'Stock-outs per month', 'Parts orders that could not be fulfilled from stock.', 'count', 'down', 31, 10, 14, [31, 29, 27, 26, 23, 22, 20, 18, 17, 16, 15, 14], daysAgo(50), ['u-marrallisa', 'u-sanne']),
+  K('kpi-vw-hours', 'volkswagen', undefined, 'Hours saved per month', 'Manual work replaced across every live vertical.', 'h', 'up', 0, 400, 462, [60, 110, 160, 210, 260, 300, 340, 370, 400, 425, 445, 462], daysAgo(170), ['u-marrallisa', 'u-sanne']),
   K('kpi-vw-invoices', 'volkswagen', 'vw-finance', 'Invoice processing time', 'Days from a supplier invoice arriving to it being booked.', 'days', 'down', 9, 2, 9, [9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9], daysAgo(12), ['u-marrallisa', 'u-pieter']),
   /* Transmissies.nl */
   K('kpi-tr-quote', 'transmissies', 'tr-sales', 'Quote turnaround', 'Hours from request to quote sent.', 'h', 'down', 24, 1, 0.8, [20, 16, 12, 8, 5, 3, 2, 1.6, 1.2, 1, 0.9, 0.8], daysAgo(90), ['u-marrallisa', 'u-milan']),

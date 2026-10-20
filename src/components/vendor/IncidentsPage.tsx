@@ -68,6 +68,7 @@ function IncidentsInner() {
     <>
       <PageHeader
         title="Incidents"
+        lede="Breaking and wasteful findings across the instances n8n is involved in. Signal the partner or step in."
       />
 
       <div className={v.filters}>

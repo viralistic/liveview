@@ -167,6 +167,12 @@ export class ViewportController {
     const w = this.screenToWorld(sx, sy);
     this.set({ x: w.x - sx / z1, y: w.y - sy / z1, z: z1 });
   }
+  /** Animated zoom around a screen point: the world under (sx, sy) stays put (double-tap on touch). */
+  zoomAtAnimated(sx: number, sy: number, factor: number, dur = 220) {
+    const z1 = clampZoom(this.vp.z * factor);
+    const w = this.screenToWorld(sx, sy);
+    return this.animateTo({ x: w.x - sx / z1, y: w.y - sy / z1, z: z1 }, dur);
+  }
   zoomAroundCenter(factor: number, dur = 220) {
     const z1 = clampZoom(this.vp.z * factor);
     const c = this.center();

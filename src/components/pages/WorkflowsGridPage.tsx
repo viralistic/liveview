@@ -22,7 +22,7 @@ export function WorkflowsGridPage() {
   }, [wfs, q, company]);
   return (
     <>
-      <PageHeader title="Workflows" actions={<ViewSwitcher value="grid" />} />
+      <PageHeader title="Workflows" lede="Every workflow you can reach, as cards you can filter and pin." actions={<ViewSwitcher value="grid" />} />
       <div className={s.filters}>
         <label className={s.searchBox}>
           <Search />

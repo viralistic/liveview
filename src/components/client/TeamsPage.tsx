@@ -46,7 +46,7 @@ function TeamsInner() {
         title="Teams"
         lede={
           <>
-            Together <b>{fmtInt(hours)} h</b> and <b>{fmtEuro(euro)}</b> saved in 30 days.
+            Verticals and their teams, competing on hours saved, targets and adoption. Together <b>{fmtInt(hours)} h</b> and <b>{fmtEuro(euro)}</b> in 30 days.
           </>
         }
         actions={partner && companies.length > 1 ? <Segmented value={company.id} onChange={setPicked} items={companies.map((c) => ({ id: c.id, label: c.shortName }))} /> : undefined}

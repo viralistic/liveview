@@ -327,3 +327,23 @@
   .rowAction { opacity: 1; }
   .hoverCard { display: none; }
 }
+
+/* ---- today summary under the greeting (v5) ---- */
+.intro { font-size: var(--fs-md); color: var(--text-muted); margin-top: 10px; max-width: 720px; line-height: 1.5; }
+.today { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-xs); font-size: var(--fs-sm); line-height: 1.5; max-width: 760px; }
+.today b { font-weight: var(--fw-medium); color: var(--text); }
+.today a { color: var(--text); font-weight: var(--fw-medium); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+.todayIcon { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; flex: none; background: var(--surface-3); color: var(--text-muted); margin-top: 1px; }
+.todayIcon[data-tone='critical'] { background: var(--accent-soft); color: var(--accent); }
+.todayIcon[data-tone='calm'] { background: var(--success-bg); color: var(--success); }
+.todayIcon svg { width: 12px; height: 12px; }
+.tileLink { text-decoration: none; color: inherit; cursor: pointer; }
+.tileLink:hover { border-color: var(--border-strong); }
+.section { scroll-margin-top: 72px; }
+@media (max-width: 700px) {
+  .today { font-size: var(--fs-xs); }
+}
+@media (max-width: 700px) {
+  .managing { display: none; }
+  .intro { font-size: var(--fs-sm); margin-top: 8px; }
+}

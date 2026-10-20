@@ -69,6 +69,7 @@ export function ChangelogPage() {
     <>
       <PageHeader
         title="Changelog"
+        lede="n8n releases and what each one touches in your workflows."
         actions={
           <Button variant="primary" disabled={simple.length === 0} onClick={() => setRun({ updates: simple, stage: 0, done: false })}>
             <Sparkles /> Auto-implement {simple.length ? `${simple.length} simple` : 'all simple'}

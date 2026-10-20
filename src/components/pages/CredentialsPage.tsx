@@ -43,6 +43,7 @@ function CredentialsPageInner() {
     <>
       <PageHeader
         title="Credentials"
+        lede="Every connection your workflows use, and what breaks when one expires."
         actions={
           <Button variant="primary" onClick={() => toast('Credential picker opens in n8n (demo)')}>
             <KeyRound /> Add credential
