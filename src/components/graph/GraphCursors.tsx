@@ -144,7 +144,7 @@ export function GraphCursors({ specs, host, followId, onFollow }: { specs: BotSp
             <span className={s.cursorLabel} style={{ background: u.color }} onPointerEnter={() => setHovered(u.id)} onPointerLeave={() => setHovered((v) => (v === u.id ? null : v))}>
               {following ? `Following ${first}` : first}
               {hovered === u.id && (
-                <div className={s.cursorCard} onPointerDown={(e) => e.stopPropagation()}>
+                <div className={s.cursorCard} data-ui onPointerDown={(e) => e.stopPropagation()}>
                   <div className={s.cursorCardHead}>
                     <Avatar user={u} size={30} ring />
                     <div style={{ minWidth: 0 }}>

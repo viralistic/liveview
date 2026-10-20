@@ -637,9 +637,17 @@ export function Graph() {
     window.addEventListener('pointercancel', up);
   };
 
+  /** every finger inside the graph joins the gesture, whatever it lands on (a thread, a bot cursor label); the floating chrome is left alone */
+  const onRootPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== 'touch' || e.button !== 0) return;
+    const target = e.target as Element;
+    if (target.closest('[data-ui],aside,button,a,input,select,textarea,label')) return;
+    const id = target.closest('[data-node]')?.getAttribute('data-node');
+    onTouchDown(e, id ? liveNodesRef.current.get(id) ?? null : null);
+  };
+
   const onBgPointerDown = (e: ReactPointerEvent<SVGRectElement>) => {
-    if (e.button !== 0) return;
-    if (e.pointerType === 'touch') return onTouchDown(e, null);
+    if (e.button !== 0 || e.pointerType === 'touch') return;
     cancelAnimationFrame(animRef.current);
     const start = { x: e.clientX, y: e.clientY, vx: viewRef.current.x, vy: viewRef.current.y, moved: false };
     const move = (ev: PointerEvent) => {
@@ -665,9 +673,8 @@ export function Graph() {
   };
 
   const onNodePointerDown = (e: ReactPointerEvent<SVGGElement>, n: GraphNode) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || e.pointerType === 'touch') return; // touch bubbles to the root handler
     e.stopPropagation();
-    if (e.pointerType === 'touch') return onTouchDown(e, n);
     const sim = simRef.current;
     const svg = svgRef.current;
     if (!sim || !svg) return;
@@ -831,6 +838,7 @@ export function Graph() {
       data-panning={panning}
       data-dragging={draggingId !== null}
       style={{ backgroundSize: `${dotSpacing}px ${dotSpacing}px`, backgroundPosition: `${view.x}px ${view.y}px` }}
+      onPointerDown={onRootPointerDown}
     >
       <svg ref={svgRef} className={s.svg} role="img" aria-label="Workflow graph">
         <defs>
@@ -922,6 +930,7 @@ export function Graph() {
                 <g
                   key={n.id}
                   className={[s.node, dim ? s.dim : ''].join(' ')}
+                  data-node={n.id}
                   transform={`translate(${n.x} ${n.y})`}
                   onPointerDown={(e) => onNodePointerDown(e, n)}
                   onPointerEnter={() => {
@@ -978,7 +987,7 @@ export function Graph() {
       {!empty && <GraphCursors specs={botSpecs} host={cursorHost} followId={followId} onFollow={onFollow} />}
 
       {empty && (
-        <div className={s.empty}>
+        <div className={s.empty} data-ui>
           <div className={s.emptyCard}>
             <span className={s.emptyIcon}>
               <Waypoints />
@@ -1019,7 +1028,7 @@ export function Graph() {
       />
 
       {followUser && (
-        <div className={s.followPill}>
+        <div className={s.followPill} data-ui>
           <Avatar user={followUser} size={22} />
           Following {followUser.name.split(' ')[0]}
           <button type="button" onClick={() => setFollowId(null)}>
@@ -1028,7 +1037,7 @@ export function Graph() {
         </div>
       )}
 
-      <div className={s.brStack}>
+      <div className={s.brStack} data-ui>
         {!viewOnly && (
           <NewWorkflowButton
             companies={companies}
@@ -1065,7 +1074,7 @@ export function Graph() {
       </div>
 
       {selectedWf && (
-        <aside className={s.panel} aria-label="Workflow details">
+        <aside className={s.panel} aria-label="Workflow details" data-ui>
           <WorkflowPanel workflowId={selectedWf.id} onClose={() => setSelectedId(null)} onFocus={(id) => focusRef.current(id, true)} showOpenCanvas />
         </aside>
       )}

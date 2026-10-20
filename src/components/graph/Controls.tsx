@@ -81,7 +81,7 @@ export function Controls({
   }
 
   return (
-    <div className={s.controls} role="region" aria-label="Graph controls">
+    <div className={s.controls} role="region" aria-label="Graph controls" data-ui>
       <div className={s.controlsHead}>
         <span className={s.controlsTitle}>
           <SlidersHorizontal />

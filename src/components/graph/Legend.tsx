@@ -49,7 +49,7 @@ export function Legend({
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
   return (
-    <div className={s.legendWrap} onPointerEnter={() => setHover(true)} onPointerLeave={() => setHover(false)}>
+    <div className={s.legendWrap} data-ui onPointerEnter={() => setHover(true)} onPointerLeave={() => setHover(false)}>
       {open && (
         <div className={s.legend} role="note" aria-label="Legend">
           <div className={s.stats}>

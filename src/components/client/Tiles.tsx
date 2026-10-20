@@ -32,13 +32,16 @@ interface Drag {
   /** nearest scrolling ancestor: dragging near its edge scrolls it (phones show one column) */
   scroller: HTMLElement | null;
   raf: number;
+  /** bottom edge zone height (the top edge always uses SCROLL_ZONE) */
+  zone: number;
 }
 type Drop = { id: string; side: 'before' | 'after'; axis: 'x' | 'y' } | null;
 
 /* controls inside a tile keep working in Customize mode; the grip button starts its own drag */
 const INTERACTIVE = 'a,button,input,select,textarea';
-/** px from the scroller's edge where dragging starts to scroll it, and the top speed per frame */
+/** px from the scroller's edge where dragging starts to scroll it, and the top speed per frame; a finger gets a taller zone at the bottom, where the phone tab bar covers the scroller */
 const SCROLL_ZONE = 56;
+const SCROLL_ZONE_TOUCH_BOTTOM = 130;
 const SCROLL_SPEED = 14;
 
 function findScroller(from: HTMLElement | null): HTMLElement | null {
@@ -130,7 +133,7 @@ export function TileGrid({ tiles, order, onReorder, customize = false }: { tiles
     const el = (e.currentTarget as HTMLElement).closest<HTMLElement>('[data-tile]');
     if (!el) return;
     const r = el.getBoundingClientRect();
-    drag.current = { id, el, grabDx: e.clientX - r.left, grabDy: e.clientY - r.top, startX: e.clientX, startY: e.clientY, px: e.clientX, py: e.clientY, moved: false, rects: snapshot(), scroller: findScroller(gridRef.current), raf: 0 };
+    drag.current = { id, el, grabDx: e.clientX - r.left, grabDy: e.clientY - r.top, startX: e.clientX, startY: e.clientY, px: e.clientX, py: e.clientY, moved: false, rects: snapshot(), scroller: findScroller(gridRef.current), raf: 0, zone: e.pointerType === 'touch' ? SCROLL_ZONE_TOUCH_BOTTOM : SCROLL_ZONE };
     try {
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     } catch {
@@ -171,7 +174,7 @@ export function TileGrid({ tiles, order, onReorder, customize = false }: { tiles
     const r = sc.getBoundingClientRect();
     const top = d.py - r.top;
     const bottom = r.bottom - d.py;
-    const speed = top < SCROLL_ZONE ? -((SCROLL_ZONE - Math.max(0, top)) / SCROLL_ZONE) * SCROLL_SPEED : bottom < SCROLL_ZONE ? ((SCROLL_ZONE - Math.max(0, bottom)) / SCROLL_ZONE) * SCROLL_SPEED : 0;
+    const speed = top < SCROLL_ZONE ? -((SCROLL_ZONE - Math.max(0, top)) / SCROLL_ZONE) * SCROLL_SPEED : bottom < d.zone ? ((d.zone - Math.max(0, bottom)) / d.zone) * SCROLL_SPEED : 0;
     if (!speed) {
       if (d.raf) cancelAnimationFrame(d.raf);
       d.raf = 0;

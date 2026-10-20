@@ -420,7 +420,8 @@
   .zoomPct { min-width: 40px; padding: 0 4px; }
   .fitBtn { padding: 0 8px; }
   .fitLabel { display: none; }
-  .bottomRight { bottom: calc(74px + env(safe-area-inset-bottom, 0px)); right: 12px; }
+  /* the New workflow pill sits above the toolbar, which spans nearly the whole width of a phone */
+  .bottomRight { bottom: calc(130px + env(safe-area-inset-bottom, 0px)); right: 12px; }
   .minimap { display: none; }
   .topRight { right: 12px; top: 12px; }
   .viewOnly { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }

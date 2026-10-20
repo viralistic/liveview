@@ -34,10 +34,6 @@
 .tile:hover .grip, .grid[data-customize='true'] .grip, .grip:focus-visible { opacity: 1; }
 .grip:hover { background: var(--surface-3); color: var(--text); }
 .tile[data-dragging='true'] .grip { cursor: grabbing; color: var(--accent); }
-/* touch: no hover on phones, so the handle is always there; while customizing a finger on the tile drags it instead of scrolling */
-.grip { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-@media (hover: none) { .grip { opacity: 1; } }
-.grid[data-customize='true'] .tile { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .drop { position: absolute; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); z-index: 5; pointer-events: none; animation: pop-in var(--dur-fast) var(--ease-out); }
 .drop[data-side='before'] { left: -9px; }
 .drop[data-side='after'] { right: -9px; }
@@ -314,3 +310,9 @@ a.detailBar:hover .detailBarName { color: var(--accent); }
   .statsGrid .foot svg, .statsWrap .foot svg { display: none; }
   .statsGrid .big, .statsWrap .big { font-size: 28px; }
 }
+
+/* ---------- tiles on touch devices ---------- */
+/* touch: no hover on phones, so the handle is always there; while customizing a finger on the tile drags it instead of scrolling */
+.grip { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+@media (hover: none) { .grip { opacity: 1; } }
+.grid[data-customize='true'] .tile { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
